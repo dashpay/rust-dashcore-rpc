@@ -2175,7 +2175,7 @@ pub struct ExtendedQuorumDetails {
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct QuorumListResult<T> {
     #[serde(flatten)]
-    pub quorums_by_type: HashMap<QuorumType, Vec<T>>
+    pub quorums_by_type: HashMap<QuorumType, T>
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]

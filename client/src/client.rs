@@ -1153,9 +1153,9 @@ pub trait RpcApi: Sized {
     // -------------------------- Quorum -------------------------------
 
     /// Returns a list of on-chain quorums
-    fn get_quorum_list(&self, count: Option<u8>) -> Result<json::QuorumListResult<QuorumHash>> {
+    fn get_quorum_list(&self, count: Option<u8>) -> Result<json::QuorumListResult<Vec<QuorumHash>>> {
         let mut args = ["list".into(), opt_into_json(count)?];
-        self.call::<json::QuorumListResult<QuorumHash>>(
+        self.call::<json::QuorumListResult<Vec<QuorumHash>>>(
             "quorum",
             handle_defaults(&mut args, &[1.into(), null()]),
         )
