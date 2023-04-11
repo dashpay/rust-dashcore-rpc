@@ -23,7 +23,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_with;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::net::SocketAddr;
 use serde_repr::*;
@@ -2063,7 +2063,7 @@ pub struct BLS {
 
 // --------------------------- Quorum -------------------------------
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize_repr)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize_repr, Hash)]
 #[serde(untagged)]
 #[repr(u8)]
 pub enum QuorumType {
@@ -2148,6 +2148,12 @@ pub struct ExtendedQuorumDetails {
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct QuorumListResult<T> {
+    #[serde(flatten)]
+    pub quorums_by_type: HashMap<QuorumType, Vec<T>>
+}
+
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct QuorumListResultInternal<T> {
     pub llmq_50_60: Option<Vec<T>>,
     pub llmq_400_60: Option<Vec<T>>,
     pub llmq_400_85: Option<Vec<T>>,

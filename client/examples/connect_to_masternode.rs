@@ -38,7 +38,7 @@ fn main() {
     let mn_outputs = rpc.get_masternode_outputs().unwrap();
     println!("\n\nMasternode Outputs: \n{:?}", mn_outputs);
 
-    // Get masternode payments 
+    // Get masternode payments
     let mn_payments = rpc.get_masternode_payments(None, None).unwrap();
     println!("\n\nMasternode Payments: \n{:?}", mn_payments);
 
