@@ -25,6 +25,7 @@ extern crate serde_with;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::net::SocketAddr;
 use serde_repr::*;
 use hex;
@@ -2106,6 +2107,29 @@ impl From<u32> for QuorumType {
     }
 }
 
+impl Display for QuorumType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let value = match self {
+            QuorumType::Llmq50_60 => "llmq_50_60",
+            QuorumType::Llmq60_75 => "llmq_60_75",
+            QuorumType::Llmq400_60 => "llmq_400_60",
+            QuorumType::Llmq400_85 => "llmq_400_85",
+            QuorumType::Llmq100_67 => "llmq_100_67",
+            QuorumType::Llmq25_67 => "llmq_25_67",
+            QuorumType::LlmqTest => "llmq_test",
+            QuorumType::LlmqTestInstantsend => "llmq_test_instantsend",
+            QuorumType::LlmqTestV17 => "llmq_test_v17",
+            QuorumType::LlmqTestDip0024 => "llmq_test_dip0024",
+            QuorumType::LlmqDevnet => "llmq_devnet",
+            QuorumType::LlmqDevnetDip0024 => "llmq_devnet_dip0024",
+            QuorumType::UNKNOWN => "unknown",
+            QuorumType::LlmqTestPlatform => "llmq_test_platform",
+            QuorumType::LlmqDevnetPlatform => "llmq_devnet_platform",
+        };
+        write!(f, "{}", value)
+    }
+}
+
 impl From<&str> for QuorumType {
     fn from(value: &str) -> Self {
         match value {
@@ -2121,6 +2145,8 @@ impl From<&str> for QuorumType {
             "llmq_test_dip0024" => QuorumType::LlmqTestDip0024,
             "llmq_devnet" => QuorumType::LlmqDevnet,
             "llmq_devnet_dip0024" => QuorumType::LlmqDevnetDip0024,
+            "llmq_test_platform" => QuorumType::LlmqTestPlatform,
+            "llmq_devnet_platform" => QuorumType::LlmqDevnetPlatform,
             _ => QuorumType::UNKNOWN
         }
     }
