@@ -2064,7 +2064,7 @@ pub struct BLS {
 
 // --------------------------- Quorum -------------------------------
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize_repr, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Deserialize, Serialize_repr, Hash)]
 #[serde(untagged)]
 #[repr(u8)]
 pub enum QuorumType {
