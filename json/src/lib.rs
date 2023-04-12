@@ -1906,7 +1906,7 @@ impl Serialize for ProTxListType {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, Ord, PartialOrd)]
 pub struct ProTxHash(#[serde(with = "hex")] pub Vec<u8>);
 
 impl From<&str> for ProTxHash {
