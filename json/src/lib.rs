@@ -2429,6 +2429,27 @@ pub struct MasternodeListDiff {
     pub merkle_root_quorums: Vec<u8>,
 }
 
+#[serde_as]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MasternodeListDiffWithMasternodes {
+    pub base_block_hash: dashcore::BlockHash,
+    pub block_hash: dashcore::BlockHash,
+    #[serde_as(as = "Bytes")]
+    pub cb_tx_merkle_tree: Vec<u8>,
+    #[serde_as(as = "Bytes")]
+    pub cb_tx: Vec<u8>,
+    #[serde(rename = "deletedMNs")]
+    pub deleted_mns: Vec<Masternode>,
+    pub mn_list: Vec<Masternode>,
+    pub deleted_quorums: Vec<QuorumItemDeleted>,
+    pub new_quorums: Vec<QuorumMinableCommitments>,
+    #[serde(rename = "merkleRootMNList", with = "hex")]
+    pub merkle_root_mn_list: Vec<u8>,
+    #[serde(rename = "merkleRootQuorums", with = "hex")]
+    pub merkle_root_quorums: Vec<u8>,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuorumRotationInfo {
