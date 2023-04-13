@@ -1964,6 +1964,49 @@ pub struct Masternode {
     pub pubkey_operator: Vec<u8>,
 }
 
+// TODO: clean up the new structure + test deserialization
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub enum MasternodeType {
+    Regular,
+    HighPerformance
+}
+
+#[serde_as]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MasternodeListItem {
+    #[serde(rename = "type")]
+    node_type: MasternodeType,
+    protx_hash: ProTxHash,
+    // TODO: confirm if this is correct
+    collateral_hash: [u8; 32],
+    collateral_index: u32,
+    operator_reward: u32,
+    state: DMNState
+}
+
+pub struct RemovedMasternodeItem {
+    protx_hash: ProTxHash,
+    voting_address: Vec<u8>,
+    pub_key_operator: Vec<u8>
+}
+
+pub struct UpdatedMasternodeItem {
+    protx_hash: ProTxHash,
+    voting_address: Vec<u8>,
+    pub_key_operator: Vec<u8>,
+    state_diff: DMNStateDiff
+}
+
+pub struct MasternodeListDiffWithMasternodes {
+    base_height: u32,
+    block_height: u32,
+    added_mns: Vec<MasternodeListItem>,
+    removed_mns: Vec<RemovedMasternodeItem>,
+    updated_mns: Vec<UpdatedMasternodeItem>
+}
+
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct Payee {
@@ -2014,6 +2057,28 @@ pub struct DMNState {
     pub payout_address: Vec<u8>,
     #[serde_as(as = "Bytes")]
     pub pub_key_operator: Vec<u8>,
+    pub operator_payout_address: Option<Vec<u8>>
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DMNStateDiff {
+    pub service: Option<SocketAddr>,
+    pub registered_height: Option<u64>,
+    pub last_paid_height: Option<u64>,
+    pub consecutive_payments: Option<u32>,
+    #[serde(rename = "PoSePenalty")]
+    pub pose_penalty: Option<i32>,
+    #[serde(rename = "PoSeRevivedHeight")]
+    pub pose_revived_height: Option<i64>,
+    #[serde(rename = "PoSeBanHeight")]
+    pub pose_ban_height: Option<i64>,
+    pub revocation_reason: Option<u32>,
+    pub owner_address: Option<Vec<u8>>,
+    pub voting_address: Option<Vec<u8>>,
+    pub payout_address: Option<Vec<u8>>,
+    pub pub_key_operator: Option<Vec<u8>>,
+    pub operator_payout_address: Option<Vec<u8>>
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
@@ -2429,26 +2494,32 @@ pub struct MasternodeListDiff {
     pub merkle_root_quorums: Vec<u8>,
 }
 
-#[serde_as]
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MasternodeListDiffWithMasternodes {
-    pub base_block_hash: dashcore::BlockHash,
-    pub block_hash: dashcore::BlockHash,
-    #[serde_as(as = "Bytes")]
-    pub cb_tx_merkle_tree: Vec<u8>,
-    #[serde_as(as = "Bytes")]
-    pub cb_tx: Vec<u8>,
-    #[serde(rename = "deletedMNs")]
-    pub deleted_mns: Vec<Masternode>,
-    pub mn_list: Vec<Masternode>,
-    pub deleted_quorums: Vec<QuorumItemDeleted>,
-    pub new_quorums: Vec<QuorumMinableCommitments>,
-    #[serde(rename = "merkleRootMNList", with = "hex")]
-    pub merkle_root_mn_list: Vec<u8>,
-    #[serde(rename = "merkleRootQuorums", with = "hex")]
-    pub merkle_root_quorums: Vec<u8>,
-}
+// #[serde_as]
+// #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct MasternodeListDiffWithMasternodes {
+//     pub base_block_hash: dashcore::BlockHash,
+//     pub block_hash: dashcore::BlockHash,
+//     #[serde_as(as = "Bytes")]
+//     pub cb_tx_merkle_tree: Vec<u8>,
+//     #[serde_as(as = "Bytes")]
+//     pub cb_tx: Vec<u8>,
+//     #[serde(rename = "deletedMNs")]
+//     pub deleted_mns: Vec<Masternode>,
+//     pub mn_list: Vec<Masternode>,
+//     pub deleted_quorums: Vec<QuorumItemDeleted>,
+//     pub new_quorums: Vec<QuorumMinableCommitments>,
+//     #[serde(rename = "merkleRootMNList", with = "hex")]
+//     pub merkle_root_mn_list: Vec<u8>,
+//     #[serde(rename = "merkleRootQuorums", with = "hex")]
+//     pub merkle_root_quorums: Vec<u8>,
+// }
+
+// #[serde_as]
+// #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+// pub struct {
+//
+// }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2553,6 +2624,7 @@ pub enum ProTxRevokeReason {
     ChangeOfKeys = 3,
     NotRecognised = 4,
 }
+
 
 // Custom deserializer functions.
 
