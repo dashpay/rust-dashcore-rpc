@@ -1977,34 +1977,34 @@ pub enum MasternodeType {
 #[serde(rename_all = "camelCase")]
 pub struct MasternodeListItem {
     #[serde(rename = "type")]
-    node_type: MasternodeType,
-    protx_hash: ProTxHash,
+    pub node_type: MasternodeType,
+    pub protx_hash: ProTxHash,
     // TODO: confirm if this is correct
-    collateral_hash: [u8; 32],
-    collateral_index: u32,
-    operator_reward: u32,
-    state: DMNState
+    pub collateral_hash: [u8; 32],
+    pub collateral_index: u32,
+    pub operator_reward: u32,
+    pub state: DMNState
 }
 
 pub struct RemovedMasternodeItem {
-    protx_hash: ProTxHash,
-    voting_address: Vec<u8>,
-    pub_key_operator: Vec<u8>
+    pub protx_hash: ProTxHash,
+    pub voting_address: Vec<u8>,
+    pub pub_key_operator: Vec<u8>
 }
 
 pub struct UpdatedMasternodeItem {
-    protx_hash: ProTxHash,
-    voting_address: Vec<u8>,
-    pub_key_operator: Vec<u8>,
-    state_diff: DMNStateDiff
+    pub protx_hash: ProTxHash,
+    pub voting_address: Vec<u8>,
+    pub pub_key_operator: Vec<u8>,
+    pub state_diff: DMNStateDiff
 }
 
 pub struct MasternodeListDiffWithMasternodes {
-    base_height: u32,
-    block_height: u32,
-    added_mns: Vec<MasternodeListItem>,
-    removed_mns: Vec<RemovedMasternodeItem>,
-    updated_mns: Vec<UpdatedMasternodeItem>
+    pub base_height: u32,
+    pub block_height: u32,
+    pub added_mns: Vec<MasternodeListItem>,
+    pub removed_mns: Vec<RemovedMasternodeItem>,
+    pub updated_mns: Vec<UpdatedMasternodeItem>
 }
 
 #[serde_as]
