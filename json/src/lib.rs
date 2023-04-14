@@ -2157,9 +2157,61 @@ pub struct DMNStateDiff {
     #[serde_as(as = "Option<Bytes>")]
     pub pub_key_operator: Option<[u8; 48]>,
     #[serde_as(as = "Option<Bytes>")]
-    pub operator_payout_address: Option<[u8; 20]>,
+    pub operator_payout_address: Option<Option<[u8; 20]>>,
     #[serde_as(as = "Option<Bytes>")]
     pub platform_node_id: Option<[u8; 20]>,
+}
+
+impl DMNState {
+    pub fn apply_diff(&mut self, diff: DMNStateDiff) {
+        let DMNStateDiff {
+            service,
+            registered_height,
+            last_paid_height,
+            consecutive_payments,
+            pose_penalty,
+            pose_revived_height,
+            pose_ban_height,
+            revocation_reason,
+            owner_address,
+            voting_address,
+            payout_address,
+            pub_key_operator,
+            operator_payout_address,
+            platform_node_id,
+        } = diff;
+        if let Some(service) = service {
+            self.service = service
+        }
+        if let Some(pose_revived_height) = pose_revived_height {
+            self.pose_revived_height = pose_revived_height;
+        }
+        if let Some(pose_ban_height) = pose_ban_height {
+            self.pose_ban_height = pose_ban_height;
+        }
+        if let Some(revocation_reason) = revocation_reason {
+            self.revocation_reason = revocation_reason;
+        }
+        if let Some(owner_address) = owner_address {
+            self.owner_address = owner_address;
+        }
+
+        if let Some(voting_address) = voting_address {
+            self.voting_address = voting_address;
+        }
+        if let Some(payout_address) = payout_address {
+            self.payout_address = payout_address;
+        }
+        if let Some(pub_key_operator) = pub_key_operator {
+            self.pub_key_operator = pub_key_operator;
+        }
+        if let Some(operator_payout_address) = operator_payout_address {
+            self.operator_payout_address = operator_payout_address;
+        }
+        if let Some(platform_node_id) = platform_node_id {
+            self.platform_node_id = Some(platform_node_id);
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
