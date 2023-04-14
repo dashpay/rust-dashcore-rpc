@@ -2104,12 +2104,13 @@ pub struct GetMasternodePaymentsResult {
     pub masternodes: Vec<MasternodePayment>,
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DMNState {
     #[serde_as(as = "DisplayFromStr")]
     pub service: SocketAddr,
-    pub registered_height: u32,
+    pub registered_height: u32,z
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: u32,
     #[serde(rename = "PoSeBanHeight")]
@@ -2118,11 +2119,13 @@ pub struct DMNState {
     pub owner_address: [u8; 20],
     pub voting_address: [u8; 20],
     pub payout_address: [u8; 20],
-    pub pub_key_operator: [u8; 48],
+    #[serde_as(as = "Option<Bytes>")]
+    pub pub_key_operator: Vec<u8>,
     pub operator_payout_address: Option<[u8; 20]>,
     pub platform_node_id: Option<[u8; 20]>,
 }
 
+#[serde_as]
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DMNStateDiff {
@@ -2135,7 +2138,8 @@ pub struct DMNStateDiff {
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
     pub payout_address: Option<[u8; 20]>,
-    pub pub_key_operator: Option<[u8; 48]>,
+    #[serde_as(as = "Option<Bytes>")]
+    pub pub_key_operator: Option<Vec<u8>>,
     pub operator_payout_address: Option<Option<[u8; 20]>>,
     pub platform_node_id: Option<[u8; 20]>,
 }
@@ -2144,10 +2148,6 @@ impl DMNState {
     pub fn apply_diff(&mut self, diff: DMNStateDiff) {
         let DMNStateDiff {
             service,
-            registered_height,
-            last_paid_height,
-            consecutive_payments,
-            pose_penalty,
             pose_revived_height,
             pose_ban_height,
             revocation_reason,
