@@ -2110,7 +2110,7 @@ pub struct GetMasternodePaymentsResult {
 pub struct DMNState {
     #[serde_as(as = "DisplayFromStr")]
     pub service: SocketAddr,
-    pub registered_height: u32,z
+    pub registered_height: u32,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: u32,
     #[serde(rename = "PoSeBanHeight")]
