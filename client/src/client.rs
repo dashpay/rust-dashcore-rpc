@@ -24,9 +24,11 @@ use dashcore::secp256k1::ecdsa::Signature;
 use dashcore::{
     Address, Amount, Block, BlockHeader, OutPoint, PrivateKey, PublicKey, Script, Transaction,
 };
-use log::Level::{Debug, Trace, Warn};
-use dashcore_rpc_json::{ExtendedQuorumDetails, ProTxHash, ProTxInfo, ProTxListType, QuorumHash, QuorumType};
 use dashcore_rpc_json::dashcore::BlockHash;
+use dashcore_rpc_json::{
+    ExtendedQuorumDetails, ProTxHash, ProTxInfo, ProTxListType, QuorumHash, QuorumType,
+};
+use log::Level::{Debug, Trace, Warn};
 
 use crate::error::*;
 use crate::json;
@@ -62,16 +64,16 @@ impl Into<OutPoint> for JsonOutPoint {
 
 /// Shorthand for converting a variable into a serde_json::Value.
 fn into_json<T>(val: T) -> Result<Value>
-    where
-        T: serde::ser::Serialize,
+where
+    T: serde::ser::Serialize,
 {
     Ok(serde_json::to_value(val)?)
 }
 
 /// Shorthand for converting an Option into an Option<serde_json::Value>.
 fn opt_into_json<T>(opt: Option<T>) -> Result<Value>
-    where
-        T: serde::ser::Serialize,
+where
+    T: serde::ser::Serialize,
 {
     match opt {
         Some(val) => Ok(into_json(val)?),
@@ -109,10 +111,7 @@ fn empty_obj() -> Value {
 ///
 /// Elements of `args` without corresponding `defaults` value, won't
 /// be substituted, because they are required.
-fn handle_defaults<'a, 'b>(
-    args: &'a mut [Value],
-    defaults: &'b [Value],
-) -> &'a [Value] {
+fn handle_defaults<'a, 'b>(args: &'a mut [Value], defaults: &'b [Value]) -> &'a [Value] {
     assert!(args.len() >= defaults.len());
 
     // Pass over the optional arguments in backwards order, filling in defaults after the first
@@ -143,9 +142,7 @@ fn handle_defaults<'a, 'b>(
 }
 
 /// Convert a possible-null result into an Option.
-fn opt_result<T: for<'a> serde::de::Deserialize<'a>>(
-    result: Value,
-) -> Result<Option<T>> {
+fn opt_result<T: for<'a> serde::de::Deserialize<'a>>(result: Value) -> Result<Option<T>> {
     if result == Value::Null {
         Ok(None)
     } else {
@@ -219,11 +216,7 @@ impl Auth {
 
 pub trait RpcApi: Sized {
     /// Call a `cmd` rpc with given `args` list
-    fn call<T: for<'a> serde::de::Deserialize<'a>>(
-        &self,
-        cmd: &str,
-        args: &[Value],
-    ) -> Result<T>;
+    fn call<T: for<'a> serde::de::Deserialize<'a>>(&self, cmd: &str, args: &[Value]) -> Result<T>;
 
     /// Query an object implementing `Querable` type
     fn get_by_id<T: queryable::Queryable<Self>>(
@@ -444,10 +437,7 @@ pub trait RpcApi: Sized {
         self.call("getrawtransaction", handle_defaults(&mut args, &[null()]))
     }
 
-    fn get_block_filter(
-        &self,
-        block_hash: &BlockHash,
-    ) -> Result<json::GetBlockFilterResult> {
+    fn get_block_filter(&self, block_hash: &BlockHash) -> Result<json::GetBlockFilterResult> {
         self.call("getblockfilter", &[into_json(block_hash)?])
     }
 
@@ -768,11 +758,7 @@ pub trait RpcApi: Sized {
     /// Mine `block_num` blocks and pay coinbase to `address`
     ///
     /// Returns hashes of the generated blocks
-    fn generate_to_address(
-        &self,
-        block_num: u64,
-        address: &Address,
-    ) -> Result<Vec<BlockHash>> {
+    fn generate_to_address(&self, block_num: u64, address: &Address) -> Result<Vec<BlockHash>> {
         self.call("generatetoaddress", &[block_num.into(), address.to_string().into()])
     }
 
@@ -1153,7 +1139,10 @@ pub trait RpcApi: Sized {
     // -------------------------- Quorum -------------------------------
 
     /// Returns a list of on-chain quorums
-    fn get_quorum_list(&self, count: Option<u8>) -> Result<json::QuorumListResult<Vec<QuorumHash>>> {
+    fn get_quorum_list(
+        &self,
+        count: Option<u8>,
+    ) -> Result<json::QuorumListResult<Vec<QuorumHash>>> {
         let mut args = ["list".into(), opt_into_json(count)?];
         self.call::<json::QuorumListResult<Vec<QuorumHash>>>(
             "quorum",
@@ -1162,7 +1151,10 @@ pub trait RpcApi: Sized {
     }
 
     /// Returns an extended list of on-chain quorums
-    fn get_quorum_listextended(&self, height: Option<i64>) -> Result<json::QuorumListResult<HashMap<QuorumHash, ExtendedQuorumDetails>>> {
+    fn get_quorum_listextended(
+        &self,
+        height: Option<i64>,
+    ) -> Result<json::QuorumListResult<HashMap<QuorumHash, ExtendedQuorumDetails>>> {
         let mut args = ["listextended".into(), opt_into_json(height)?];
         self.call::<json::QuorumListResult<HashMap<QuorumHash, ExtendedQuorumDetails>>>(
             "quorum",
@@ -1228,14 +1220,24 @@ pub trait RpcApi: Sized {
     }
 
     /// Checks for a recovered signature for a previous threshold-signing message request
-    fn get_quorum_hasrecsig(&self, llmq_type: QuorumType, id: &str, msg_hash: &str) -> Result<bool> {
+    fn get_quorum_hasrecsig(
+        &self,
+        llmq_type: QuorumType,
+        id: &str,
+        msg_hash: &str,
+    ) -> Result<bool> {
         let mut args =
             ["hasrecsig".into(), into_json(llmq_type)?, into_json(id)?, into_json(msg_hash)?];
         self.call::<bool>("quorum", handle_defaults(&mut args, &[null()]))
     }
 
     /// Checks if there is a conflict for a threshold-signing message request
-    fn get_quorum_isconflicting(&self, llmq_type: QuorumType, id: &str, msg_hash: &str) -> Result<bool> {
+    fn get_quorum_isconflicting(
+        &self,
+        llmq_type: QuorumType,
+        id: &str,
+        msg_hash: &str,
+    ) -> Result<bool> {
         let mut args =
             ["isconflicting".into(), into_json(llmq_type)?, into_json(id)?, into_json(msg_hash)?];
         self.call::<bool>("quorum", handle_defaults(&mut args, &[null()]))
@@ -1272,7 +1274,11 @@ pub trait RpcApi: Sized {
     }
 
     /// Returns information about the quorum that would/should sign a request
-    fn get_quorum_selectquorum(&self, llmq_type: QuorumType, id: &str) -> Result<json::SelectQuorumResult> {
+    fn get_quorum_selectquorum(
+        &self,
+        llmq_type: QuorumType,
+        id: &str,
+    ) -> Result<json::SelectQuorumResult> {
         let mut args = ["selectquorum".into(), into_json(llmq_type)?, into_json(id)?];
         self.call::<json::SelectQuorumResult>("quorum", handle_defaults(&mut args, &[null()]))
     }
@@ -1400,11 +1406,22 @@ pub trait RpcApi: Sized {
         payout_address: dashcore::Address,
         fee_source_address: Option<dashcore::Address>,
     ) -> Result<json::ProTxRegPrepare> {
-        let mut args = ["register_prepare".into(), into_json(collateral_hash)?, into_json(collateral_index)?, into_json(ip_and_port)?, into_json(owner_address)?, into_json(operator_pub_key)?, into_json(voting_address)?, into_json(operator_reward)?, into_json(payout_address)?, opt_into_json(fee_source_address)?];
+        let mut args = [
+            "register_prepare".into(),
+            into_json(collateral_hash)?,
+            into_json(collateral_index)?,
+            into_json(ip_and_port)?,
+            into_json(owner_address)?,
+            into_json(operator_pub_key)?,
+            into_json(voting_address)?,
+            into_json(operator_reward)?,
+            into_json(payout_address)?,
+            opt_into_json(fee_source_address)?,
+        ];
         self.call::<json::ProTxRegPrepare>("protx", handle_defaults(&mut args, &[null()]))
     }
 
-    /// Combines the unsigned ProTx and a signature of the signMessage, signs all inputs which were added to 
+    /// Combines the unsigned ProTx and a signature of the signMessage, signs all inputs which were added to
     /// cover fees and submits the resulting transaction to the network
     fn get_protx_register_submit(&self, tx: &str, sig: &str) -> Result<json::ProRegTxHash> {
         let mut args = ["register_submit".into(), into_json(tx)?, into_json(sig)?];
@@ -1412,8 +1429,20 @@ pub trait RpcApi: Sized {
     }
 
     /// Creates and sends a ProUpRevTx to the network
-    fn get_protx_revoke(&self, pro_tx_hash: &str, operator_pub_key: &str, reason: json::ProTxRevokeReason, fee_source_address: Option<dashcore::Address>) -> Result<json::ProRegTxHash> {
-        let mut args = ["revoke".into(), into_json(pro_tx_hash)?, into_json(operator_pub_key)?, into_json(reason as u8)?, opt_into_json(fee_source_address)?];
+    fn get_protx_revoke(
+        &self,
+        pro_tx_hash: &str,
+        operator_pub_key: &str,
+        reason: json::ProTxRevokeReason,
+        fee_source_address: Option<dashcore::Address>,
+    ) -> Result<json::ProRegTxHash> {
+        let mut args = [
+            "revoke".into(),
+            into_json(pro_tx_hash)?,
+            into_json(operator_pub_key)?,
+            into_json(reason as u8)?,
+            opt_into_json(fee_source_address)?,
+        ];
         self.call::<json::ProRegTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
@@ -1426,31 +1455,59 @@ pub trait RpcApi: Sized {
         payout_address: dashcore::Address,
         fee_source_address: Option<dashcore::Address>,
     ) -> Result<json::ProRegTxHash> {
-        let mut args = ["update_registrar".into(), into_json(pro_tx_hash)?, into_json(operator_pub_key)?, into_json(voting_address)?, into_json(payout_address)?, opt_into_json(fee_source_address)?];
+        let mut args = [
+            "update_registrar".into(),
+            into_json(pro_tx_hash)?,
+            into_json(operator_pub_key)?,
+            into_json(voting_address)?,
+            into_json(payout_address)?,
+            opt_into_json(fee_source_address)?,
+        ];
         self.call::<json::ProRegTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates and sends a ProUpServTx to the network
     fn get_protx_update_service(
-        &self, pro_tx_hash: &str,
+        &self,
+        pro_tx_hash: &str,
         ip_and_port: &str,
         operator_key: &str,
         operator_payout_address: Option<dashcore::Address>,
         fee_source_address: Option<dashcore::Address>,
     ) -> Result<json::ProRegTxHash> {
-        let mut args = ["update_service".into(), into_json(pro_tx_hash)?, into_json(ip_and_port)?, into_json(operator_key)?, opt_into_json(operator_payout_address)?, opt_into_json(fee_source_address)?];
+        let mut args = [
+            "update_service".into(),
+            into_json(pro_tx_hash)?,
+            into_json(ip_and_port)?,
+            into_json(operator_key)?,
+            opt_into_json(operator_payout_address)?,
+            opt_into_json(fee_source_address)?,
+        ];
         self.call::<json::ProRegTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Tests if a quorum signature is valid for a ChainLock
-    fn get_verifychainlock(&self, block_hash: &str, signature: &str, block_height: Option<u32>) -> Result<bool> {
-        let mut args = [into_json(block_hash)?, into_json(signature)?, opt_into_json(block_height)?];
+    fn get_verifychainlock(
+        &self,
+        block_hash: &str,
+        signature: &str,
+        block_height: Option<u32>,
+    ) -> Result<bool> {
+        let mut args =
+            [into_json(block_hash)?, into_json(signature)?, opt_into_json(block_height)?];
         self.call::<bool>("verifychainlock", handle_defaults(&mut args, &[null()]))
     }
 
     /// Tests  if a quorum signature is valid for an InstantSend Lock
-    fn get_verifyislock(&self, id: &str, tx_id: &str, signature: &str, max_height: Option<u32>) -> Result<bool> {
-        let mut args = [into_json(id)?, into_json(tx_id)?, into_json(signature)?, opt_into_json(max_height)?];
+    fn get_verifyislock(
+        &self,
+        id: &str,
+        tx_id: &str,
+        signature: &str,
+        max_height: Option<u32>,
+    ) -> Result<bool> {
+        let mut args =
+            [into_json(id)?, into_json(tx_id)?, into_json(signature)?, opt_into_json(max_height)?];
         self.call::<bool>("verifyislock", handle_defaults(&mut args, &[null()]))
     }
 }
@@ -1494,11 +1551,7 @@ impl Client {
 
 impl RpcApi for Client {
     /// Call an `cmd` rpc with given `args` list
-    fn call<T: for<'a> serde::de::Deserialize<'a>>(
-        &self,
-        cmd: &str,
-        args: &[Value],
-    ) -> Result<T> {
+    fn call<T: for<'a> serde::de::Deserialize<'a>>(&self, cmd: &str, args: &[Value]) -> Result<T> {
         let raw_args: Vec<_> = args
             .iter()
             .map(|a| {
@@ -1536,7 +1589,7 @@ fn log_response(cmd: &str, resp: &Result<jsonrpc::Response>) {
                     let def = serde_json::value::RawValue::from_string(
                         serde_json::Value::Null.to_string(),
                     )
-                        .unwrap();
+                    .unwrap();
                     let result = resp.result.as_ref().unwrap_or(&def);
                     trace!(target: "dashcore_rpc", "JSON-RPC response for {}: {}", cmd, result);
                 }
