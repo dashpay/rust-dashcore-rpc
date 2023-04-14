@@ -2110,10 +2110,6 @@ pub struct DMNState {
     #[serde_as(as = "DisplayFromStr")]
     pub service: SocketAddr,
     pub registered_height: u32,
-    pub last_paid_height: u32,
-    pub consecutive_payments: u32,
-    #[serde(rename = "PoSePenalty")]
-    pub pose_penalty: u32,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: u32,
     #[serde(rename = "PoSeBanHeight")]
@@ -2131,11 +2127,6 @@ pub struct DMNState {
 #[serde(rename_all = "camelCase")]
 pub struct DMNStateDiff {
     pub service: Option<SocketAddr>,
-    pub registered_height: Option<u32>,
-    pub last_paid_height: Option<u32>,
-    pub consecutive_payments: Option<u32>,
-    #[serde(rename = "PoSePenalty")]
-    pub pose_penalty: Option<u32>,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: Option<u32>,
     #[serde(rename = "PoSeBanHeight")]
