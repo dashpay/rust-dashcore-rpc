@@ -2110,15 +2110,15 @@ pub struct GetMasternodePaymentsResult {
 pub struct DMNState {
     #[serde_as(as = "DisplayFromStr")]
     pub service: SocketAddr,
-    pub registered_height: u64,
-    pub last_paid_height: u64,
+    pub registered_height: u32,
+    pub last_paid_height: u32,
     pub consecutive_payments: u32,
     #[serde(rename = "PoSePenalty")]
-    pub pose_penalty: i32,
+    pub pose_penalty: u32,
     #[serde(rename = "PoSeRevivedHeight")]
-    pub pose_revived_height: i64,
+    pub pose_revived_height: u32,
     #[serde(rename = "PoSeBanHeight")]
-    pub pose_ban_height: i64,
+    pub pose_ban_height: u32,
     pub revocation_reason: u32,
     #[serde_as(as = "Bytes")]
     pub owner_address: [u8; 20],
@@ -2138,15 +2138,15 @@ pub struct DMNState {
 #[serde(rename_all = "camelCase")]
 pub struct DMNStateDiff {
     pub service: Option<SocketAddr>,
-    pub registered_height: Option<u64>,
-    pub last_paid_height: Option<u64>,
+    pub registered_height: Option<u32>,
+    pub last_paid_height: Option<u32>,
     pub consecutive_payments: Option<u32>,
     #[serde(rename = "PoSePenalty")]
-    pub pose_penalty: Option<i32>,
+    pub pose_penalty: Option<u32>,
     #[serde(rename = "PoSeRevivedHeight")]
-    pub pose_revived_height: Option<i64>,
+    pub pose_revived_height: Option<u32>,
     #[serde(rename = "PoSeBanHeight")]
-    pub pose_ban_height: Option<i64>,
+    pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<u32>,
     #[serde_as(as = "Option<Bytes>")]
     pub owner_address: Option<[u8; 20]>,
