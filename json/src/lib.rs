@@ -1982,6 +1982,7 @@ pub struct MasternodeListItem {
     // TODO: confirm if this is correct
     pub collateral_hash: [u8; 32],
     pub collateral_index: u32,
+    // TODO: add collateral_address
     pub operator_reward: u32,
     pub state: DMNState
 }
@@ -2057,7 +2058,8 @@ pub struct DMNState {
     pub payout_address: Vec<u8>,
     #[serde_as(as = "Bytes")]
     pub pub_key_operator: Vec<u8>,
-    pub operator_payout_address: Option<Vec<u8>>
+    pub operator_payout_address: Option<Vec<u8>>,
+    pub platform_node_id: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
@@ -2078,7 +2080,8 @@ pub struct DMNStateDiff {
     pub voting_address: Option<Vec<u8>>,
     pub payout_address: Option<Vec<u8>>,
     pub pub_key_operator: Option<Vec<u8>>,
-    pub operator_payout_address: Option<Vec<u8>>
+    pub operator_payout_address: Option<Vec<u8>>,
+    pub platform_node_id: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
