@@ -2104,7 +2104,6 @@ pub struct GetMasternodePaymentsResult {
     pub masternodes: Vec<MasternodePayment>,
 }
 
-#[serde_as]
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DMNState {
@@ -2120,20 +2119,14 @@ pub struct DMNState {
     #[serde(rename = "PoSeBanHeight")]
     pub pose_ban_height: u32,
     pub revocation_reason: u32,
-    #[serde_as(as = "Bytes")]
     pub owner_address: [u8; 20],
-    #[serde_as(as = "Bytes")]
     pub voting_address: [u8; 20],
-    #[serde_as(as = "Bytes")]
     pub payout_address: [u8; 20],
-    #[serde_as(as = "Bytes")]
     pub pub_key_operator: [u8; 48],
-    #[serde_as(as = "Option<Bytes>")]
     pub operator_payout_address: Option<[u8; 20]>,
-    #[serde_as(as = "Option<Bytes>")]
     pub platform_node_id: Option<[u8; 20]>,
 }
-#[serde_as]
+
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DMNStateDiff {
@@ -2148,17 +2141,11 @@ pub struct DMNStateDiff {
     #[serde(rename = "PoSeBanHeight")]
     pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<u32>,
-    #[serde_as(as = "Option<Bytes>")]
     pub owner_address: Option<[u8; 20]>,
-    #[serde_as(as = "Option<Bytes>")]
     pub voting_address: Option<[u8; 20]>,
-    #[serde_as(as = "Option<Bytes>")]
     pub payout_address: Option<[u8; 20]>,
-    #[serde_as(as = "Option<Bytes>")]
     pub pub_key_operator: Option<[u8; 48]>,
-    #[serde_as(as = "Option<Bytes>")]
     pub operator_payout_address: Option<Option<[u8; 20]>>,
-    #[serde_as(as = "Option<Bytes>")]
     pub platform_node_id: Option<[u8; 20]>,
 }
 
