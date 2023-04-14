@@ -2119,7 +2119,7 @@ pub struct DMNState {
     pub owner_address: [u8; 20],
     pub voting_address: [u8; 20],
     pub payout_address: [u8; 20],
-    #[serde_as(as = "Option<Bytes>")]
+    #[serde_as(as = "Bytes")]
     pub pub_key_operator: Vec<u8>,
     pub operator_payout_address: Option<[u8; 20]>,
     pub platform_node_id: Option<[u8; 20]>,
