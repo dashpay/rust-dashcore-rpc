@@ -22,11 +22,12 @@ use serde_json::{self, Value};
 use dashcore::hashes::hex::{FromHex, ToHex};
 use dashcore::secp256k1::ecdsa::Signature;
 use dashcore::{
-    Address, Amount, Block, BlockHeader, OutPoint, PrivateKey, PublicKey, Script, Transaction,
+    Address, Amount, Block, BlockHeader, OutPoint, PrivateKey, PublicKey, ProTxHash, QuorumHash,
+    Script, Transaction,
 };
 use dashcore_rpc_json::dashcore::BlockHash;
 use dashcore_rpc_json::{
-    ExtendedQuorumDetails, ProTxHash, ProTxInfo, ProTxListType, QuorumHash, QuorumType,
+    ExtendedQuorumDetails, ProTxInfo, ProTxListType, QuorumType,
 };
 use log::Level::{Debug, Trace, Warn};
 

@@ -2317,15 +2317,6 @@ impl From<&str> for QuorumType {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Hash, Deserialize, Serialize)]
-pub struct QuorumHash(#[serde(with = "hex")] pub Vec<u8>);
-
-impl From<&str> for QuorumHash {
-    fn from(value: &str) -> Self {
-        QuorumHash(Vec::from_hex(value).unwrap())
-    }
-}
-
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtendedQuorumDetails {
