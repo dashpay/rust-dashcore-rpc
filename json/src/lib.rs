@@ -33,6 +33,7 @@ use std::net::SocketAddr;
 use dashcore::consensus::encode;
 use dashcore::hashes::hex::{FromHex, ToHex};
 use dashcore::hashes::sha256;
+use dashcore::types::ProTxHash;
 use dashcore::util::{bip158, bip32};
 use dashcore::{
     Address, Amount, BlockHash, PrivateKey, PublicKey, Script, SignedAmount, Transaction,
@@ -1976,18 +1977,6 @@ impl Serialize for ProTxListType {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, Ord, PartialOrd)]
-pub struct ProTxHash(#[serde(with = "hex")] pub Vec<u8>);
-
-impl From<&str> for ProTxHash {
-    fn from(value: &str) -> Self {
-        ProTxHash(Vec::from_hex(value).unwrap())
-    }
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
-pub struct ProRegTxHash(pub Vec<u8>);
-
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct GetMasternodeCountResult {
     pub total: u32,
@@ -2720,7 +2709,7 @@ pub enum ProTxList {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProTxRegPrepare {
-    pub tx: ProRegTxHash,
+    pub tx: ProTxHash,
     #[serde_as(as = "Bytes")]
     pub collateral_address: Vec<u8>,
     #[serde_as(as = "Bytes")]
