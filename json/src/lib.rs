@@ -33,11 +33,8 @@ use std::net::SocketAddr;
 use dashcore::consensus::encode;
 use dashcore::hashes::hex::{FromHex, ToHex};
 use dashcore::hashes::sha256;
-use dashcore::types::ProTxHash;
 use dashcore::util::{bip158, bip32};
-use dashcore::{
-    Address, Amount, BlockHash, PrivateKey, PublicKey, Script, SignedAmount, Transaction,
-};
+use dashcore::{Address, Amount, BlockHash, PrivateKey, ProTxHash, PublicKey, QuorumHash, Script, SignedAmount, Transaction};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use serde_with::{serde_as, Bytes, DisplayFromStr};

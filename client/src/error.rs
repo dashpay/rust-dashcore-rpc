@@ -32,7 +32,6 @@ pub enum Error {
     InvalidCookieFile,
     /// The JSON result had an unexpected structure.
     UnexpectedStructure,
-    ConvertToFixedSizeError(OldVecLen, FixedSizeLen),
 }
 
 impl From<jsonrpc::error::Error> for Error {

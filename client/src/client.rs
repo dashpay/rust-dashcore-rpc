@@ -1349,7 +1349,7 @@ pub trait RpcApi: Sized {
         payout_address: &str,
         fee_source_address: Option<&str>,
         submit: Option<bool>,
-    ) -> Result<json::ProTxHash> {
+    ) -> Result<ProTxHash> {
         let mut args = [
             "register".into(),
             into_json(collateral_hash)?,
@@ -1363,7 +1363,7 @@ pub trait RpcApi: Sized {
             opt_into_json(fee_source_address)?,
             opt_into_json(submit)?,
         ];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates and funds a ProRegTx with the 1,000 DASH necessary for a masternode and then sends it to the network
@@ -1378,7 +1378,7 @@ pub trait RpcApi: Sized {
         payout_address: &str,
         fund_address: Option<&str>,
         submit: Option<bool>,
-    ) -> Result<json::ProTxHash> {
+    ) -> Result<ProTxHash> {
         let mut args = [
             "register_fund".into(),
             into_json(collateral_address)?,
@@ -1391,7 +1391,7 @@ pub trait RpcApi: Sized {
             opt_into_json(fund_address)?,
             opt_into_json(submit)?,
         ];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates an unsigned ProTx and a message that must be signed externally
@@ -1424,9 +1424,9 @@ pub trait RpcApi: Sized {
 
     /// Combines the unsigned ProTx and a signature of the signMessage, signs all inputs which were added to
     /// cover fees and submits the resulting transaction to the network
-    fn get_protx_register_submit(&self, tx: &str, sig: &str) -> Result<json::ProTxHash> {
+    fn get_protx_register_submit(&self, tx: &str, sig: &str) -> Result<ProTxHash> {
         let mut args = ["register_submit".into(), into_json(tx)?, into_json(sig)?];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates and sends a ProUpRevTx to the network
@@ -1436,7 +1436,7 @@ pub trait RpcApi: Sized {
         operator_pub_key: &str,
         reason: json::ProTxRevokeReason,
         fee_source_address: Option<dashcore::Address>,
-    ) -> Result<json::ProTxHash> {
+    ) -> Result<ProTxHash> {
         let mut args = [
             "revoke".into(),
             into_json(pro_tx_hash)?,
@@ -1444,7 +1444,7 @@ pub trait RpcApi: Sized {
             into_json(reason as u8)?,
             opt_into_json(fee_source_address)?,
         ];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates and sends a ProUpRegTx to the network
@@ -1455,7 +1455,7 @@ pub trait RpcApi: Sized {
         voting_address: dashcore::Address,
         payout_address: dashcore::Address,
         fee_source_address: Option<dashcore::Address>,
-    ) -> Result<json::ProTxHash> {
+    ) -> Result<ProTxHash> {
         let mut args = [
             "update_registrar".into(),
             into_json(pro_tx_hash)?,
@@ -1464,7 +1464,7 @@ pub trait RpcApi: Sized {
             into_json(payout_address)?,
             opt_into_json(fee_source_address)?,
         ];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Creates and sends a ProUpServTx to the network
@@ -1475,7 +1475,7 @@ pub trait RpcApi: Sized {
         operator_key: &str,
         operator_payout_address: Option<dashcore::Address>,
         fee_source_address: Option<dashcore::Address>,
-    ) -> Result<json::ProTxHash> {
+    ) -> Result<ProTxHash> {
         let mut args = [
             "update_service".into(),
             into_json(pro_tx_hash)?,
@@ -1484,7 +1484,7 @@ pub trait RpcApi: Sized {
             opt_into_json(operator_payout_address)?,
             opt_into_json(fee_source_address)?,
         ];
-        self.call::<json::ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
+        self.call::<ProTxHash>("protx", handle_defaults(&mut args, &[null()]))
     }
 
     /// Tests if a quorum signature is valid for a ChainLock
