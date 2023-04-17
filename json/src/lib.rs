@@ -2045,14 +2045,10 @@ pub struct MasternodeListItem {
 
 pub struct RemovedMasternodeItem {
     pub protx_hash: ProTxHash,
-    pub voting_address: Vec<u8>,
-    pub pub_key_operator: Vec<u8>,
 }
 
 pub struct UpdatedMasternodeItem {
     pub protx_hash: ProTxHash,
-    pub voting_address: Vec<u8>,
-    pub pub_key_operator: Vec<u8>,
     pub state_diff: DMNStateDiff,
 }
 
