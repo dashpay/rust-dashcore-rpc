@@ -2110,17 +2110,19 @@ impl From<&str> for QuorumType {
     fn from(value: &str) -> Self {
         match value {
             "llmq_50_60" => QuorumType::Llmq50_60,
-            "llmq_60_75" => QuorumType::Llmq60_75,
             "llmq_400_60" => QuorumType::Llmq400_60,
             "llmq_400_85" => QuorumType::Llmq400_85,
             "llmq_100_67" => QuorumType::Llmq100_67,
+            "llmq_60_75" => QuorumType::Llmq60_75,
             "llmq_25_67" => QuorumType::Llmq25_67,
             "llmq_test" => QuorumType::LlmqTest,
-            "llmq_test_instantsend" => QuorumType::LlmqTestInstantsend,
+            "llmq_devnet" => QuorumType::LlmqDevnet,
             "llmq_test_v17" => QuorumType::LlmqTestV17,
             "llmq_test_dip0024" => QuorumType::LlmqTestDip0024,
-            "llmq_devnet" => QuorumType::LlmqDevnet,
+            "llmq_test_instantsend" => QuorumType::LlmqTestInstantsend,
             "llmq_devnet_dip0024" => QuorumType::LlmqDevnetDip0024,
+            "llmq_test_platform" => QuorumType::LlmqTestPlatform,
+            "llmq_devnet_platform" => QuorumType::LlmqDevnetPlatform,
             _ => QuorumType::UNKNOWN
         }
     }
