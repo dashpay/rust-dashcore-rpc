@@ -2123,7 +2123,7 @@ pub struct DMNStateDiff {
     pub service: Option<SocketAddr>,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: Option<u32>,
-    #[serde(rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
+    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
     pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
@@ -2656,7 +2656,7 @@ pub struct MasternodeListDiffState {
     pub pose_penalty: Option<u32>,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: Option<u32>,
-    #[serde(rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
+    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
     pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<i32>,
     #[serde_as(as = "Option<Bytes>")]
