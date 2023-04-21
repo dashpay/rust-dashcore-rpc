@@ -2526,7 +2526,7 @@ pub struct QuorumInfoResult {
     #[serde(with = "hex")]
     pub mined_block: Vec<u8>,
     pub members: Vec<QuorumMember>,
-    #[serde_as(as = "Bytes")]
+    #[serde_as(as = "hex")]
     pub quorum_public_key: Vec<u8>,
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub secret_key_share: Option<Vec<u8>>,
