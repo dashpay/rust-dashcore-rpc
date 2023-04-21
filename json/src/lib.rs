@@ -2109,7 +2109,7 @@ pub struct DMNState {
     pub operator_payout_address: Option<[u8; 20]>,
     #[serde(rename = "platformNodeID")]
     #[serde_as(as = "Option<Bytes>")]
-    pub platform_node_id: Option<[u8;20]>,
+    pub platform_node_id: Option<[u8; 20]>,
     #[serde(rename = "platformP2PPort")]
     pub platform_p2p_port: Option<u32>,
     #[serde(rename = "platformHTTPPort")]
@@ -2123,8 +2123,8 @@ pub struct DMNStateDiff {
     pub service: Option<SocketAddr>,
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: Option<u32>,
-    #[serde(rename = "PoSeBanHeight")]
-    pub pose_ban_height: Option<i32>,
+    #[serde(rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
+    pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
@@ -2149,18 +2149,12 @@ impl DMNState {
             operator_payout_address,
             platform_node_id,
         } = diff;
+        self.pose_ban_height = pose_ban_height;
         if let Some(service) = service {
             self.service = service
         }
         if let Some(pose_revived_height) = pose_revived_height {
             self.pose_revived_height = pose_revived_height;
-        }
-        if let Some(pose_ban_height) = pose_ban_height {
-            self.pose_ban_height = if pose_ban_height < 0 {
-                 None
-            } else {
-                Some(pose_ban_height as u32)
-            }
         }
         if let Some(revocation_reason) = revocation_reason {
             self.revocation_reason = revocation_reason;
@@ -2658,9 +2652,12 @@ pub struct MasternodeListDiffState {
     pub registered_height: Option<u32>,
     pub last_paid_height: Option<u32>,
     pub consecutive_payments: Option<i32>,
-    pub po_se_penalty: Option<i32>,
-    pub po_se_revived_height: Option<i32>,
-    pub po_se_ban_height: Option<i32>,
+    #[serde(rename = "PoSePenalty")]
+    pub pose_penalty: Option<u32>,
+    #[serde(rename = "PoSeRevivedHeight")]
+    pub pose_revived_height: Option<u32>,
+    #[serde(rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
+    pub pose_ban_height: Option<u32>,
     pub revocation_reason: Option<i32>,
     #[serde_as(as = "Option<Bytes>")]
     pub owner_address: Option<Vec<u8>>,
@@ -2873,9 +2870,36 @@ where
     })
 }
 
+fn deserialize_u32_opt<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
+    where
+        D: Deserializer<'de>,
+{
+    let val = i64::deserialize(deserializer)?;
+    if val < 0 {
+        return Ok(None);
+    }
+    Ok(Some(val as u32))
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{ExtendedQuorumListResult, MasternodeListDiff};
+    use crate::{ExtendedQuorumListResult, MasternodeListDiff, deserialize_u32_opt};
+
+    #[test]
+    fn test_deserialize_u32_opt() {
+        #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+        struct Test {
+            #[serde(deserialize_with = "deserialize_u32_opt")]
+            pub field: Option<u32>
+        }
+
+        let json = r#"{"field": 1}"#;
+        let result: Test = serde_json::from_str(&json).unwrap();
+        assert_eq!(result.field, Some(1));
+        let json = r#"{"field": -1}"#;
+        let result: Test = serde_json::from_str(&json).unwrap();
+        assert_eq!(result.field, None);
+    }
 
     #[test]
     fn deserialize_quorum_listextended() {
