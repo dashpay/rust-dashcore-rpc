@@ -2099,7 +2099,7 @@ pub struct DMNState {
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: u32,
     #[serde(rename = "PoSeBanHeight")]
-    pub pose_ban_height: u32,
+    pub pose_ban_height: Option<u32>,
     pub revocation_reason: u32,
     pub owner_address: [u8; 20],
     pub voting_address: [u8; 20],
@@ -2107,7 +2107,13 @@ pub struct DMNState {
     #[serde_as(as = "Bytes")]
     pub pub_key_operator: Vec<u8>,
     pub operator_payout_address: Option<[u8; 20]>,
-    pub platform_node_id: Option<[u8; 20]>,
+    #[serde(rename = "platformNodeID")]
+    #[serde_as(as = "Option<Bytes>")]
+    pub platform_node_id: Option<[u8;20]>,
+    #[serde(rename = "platformP2PPort")]
+    pub platform_p2p_port: Option<u32>,
+    #[serde(rename = "platformHTTPPort")]
+    pub platform_http_port: Option<u32>,
 }
 
 #[serde_as]
@@ -2118,7 +2124,7 @@ pub struct DMNStateDiff {
     #[serde(rename = "PoSeRevivedHeight")]
     pub pose_revived_height: Option<u32>,
     #[serde(rename = "PoSeBanHeight")]
-    pub pose_ban_height: Option<u32>,
+    pub pose_ban_height: Option<i32>,
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
@@ -2150,7 +2156,11 @@ impl DMNState {
             self.pose_revived_height = pose_revived_height;
         }
         if let Some(pose_ban_height) = pose_ban_height {
-            self.pose_ban_height = pose_ban_height;
+            self.pose_ban_height = if pose_ban_height < 0 {
+                 None
+            } else {
+                Some(pose_ban_height as u32)
+            }
         }
         if let Some(revocation_reason) = revocation_reason {
             self.revocation_reason = revocation_reason;
@@ -2590,7 +2600,9 @@ pub struct QuorumSnapshot {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuorumMasternodeListItem {
+    #[serde(with = "hex")]
     pub pro_reg_tx_hash: Vec<u8>,
+    #[serde(with = "hex")]
     pub confirmed_hash: Vec<u8>,
     #[serde_as(as = "DisplayFromStr")]
     pub service: SocketAddr,
