@@ -2029,7 +2029,7 @@ pub struct Masternode {
 
 // TODO: clean up the new structure + test deserialization
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, Encode, Decode)]
 pub enum MasternodeType {
     Regular,
     HighPerformance,
