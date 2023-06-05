@@ -32,13 +32,10 @@ use std::str::FromStr;
 
 use dashcore::consensus::encode;
 use dashcore::hashes::hex::Error::InvalidChar;
-use dashcore::hashes::hex::{FromHex, ToHex};
 use dashcore::hashes::sha256;
-use dashcore::util::{address, bip158, bip32};
-use dashcore::{
-    Address, Amount, BlockHash, PrivateKey, ProTxHash, PublicKey, QuorumHash, Script, SignedAmount,
-    Transaction, Txid,
-};
+use dashcore::{Address, Amount, bip158, bip32, BlockHash, PrivateKey, ProTxHash, PublicKey, QuorumHash, Script, ScriptBuf, SignedAmount, Transaction, Txid, TxMerkleNode};
+use dashcore::address;
+use dashcore::address::NetworkUnchecked;
 use hex::FromHexError;
 use serde::de::Error as SerdeError;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -95,9 +92,9 @@ pub struct GetNetworkInfoResult {
     #[serde(rename = "socketevents")]
     pub socket_events: String,
     pub networks: Vec<GetNetworkInfoResultNetwork>,
-    #[serde(rename = "relayfee", with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(rename = "relayfee", with = "dashcore::amount::serde::as_btc")]
     pub relay_fee: Amount,
-    #[serde(rename = "incrementalfee", with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(rename = "incrementalfee", with = "dashcore::amount::serde::as_btc")]
     pub incremental_fee: Amount,
     #[serde(rename = "localaddresses")]
     pub local_addresses: Vec<GetNetworkInfoResultAddress>,
@@ -107,8 +104,8 @@ pub struct GetNetworkInfoResult {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AddMultiSigAddressResult {
-    pub address: Address,
-    pub redeem_script: Script,
+    pub address: Address<NetworkUnchecked>,
+    pub redeem_script: ScriptBuf,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
@@ -123,13 +120,13 @@ pub struct GetWalletInfoResult {
     pub wallet_name: String,
     #[serde(rename = "walletversion")]
     pub wallet_version: u32,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub balance: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub coinjoin_balance: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub unconfirmed_balance: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub immature_balance: Amount,
     #[serde(rename = "txcount")]
     pub tx_count: usize,
@@ -202,7 +199,7 @@ pub struct GetBlockResult {
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub version_hex: Option<Vec<u8>>,
     pub merkleroot: dashcore::TxMerkleNode,
-    pub tx: Vec<dashcore::Txid>,
+    pub tx: Vec<Txid>,
     pub cb_tx: CoinbaseTxDetails,
     pub time: usize,
     pub mediantime: usize,
@@ -226,7 +223,7 @@ pub struct GetBlockHeaderResult {
     #[serde(default, with = "hex")]
     pub version_hex: Vec<u8>,
     #[serde(rename = "merkleroot")]
-    pub merkle_root: dashcore::TxMerkleNode,
+    pub merkle_root: TxMerkleNode,
     pub time: usize,
     #[serde(rename = "mediantime")]
     pub median_time: Option<usize>,
@@ -244,9 +241,9 @@ pub struct GetBlockHeaderResult {
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct GetBlockStatsResult {
-    #[serde(rename = "avgfee", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "avgfee", with = "dashcore::amount::serde::as_sat")]
     pub avg_fee: Amount,
-    #[serde(rename = "avgfeerate", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "avgfeerate", with = "dashcore::amount::serde::as_sat")]
     pub avg_fee_rate: Amount,
     #[serde(rename = "avgtxsize")]
     pub avg_tx_size: u32,
@@ -256,33 +253,33 @@ pub struct GetBlockStatsResult {
     pub fee_rate_percentiles: FeeRatePercentiles,
     pub height: u32,
     pub ins: usize,
-    #[serde(rename = "maxfee", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "maxfee", with = "dashcore::amount::serde::as_sat")]
     pub max_fee: Amount,
-    #[serde(rename = "maxfeerate", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "maxfeerate", with = "dashcore::amount::serde::as_sat")]
     pub max_fee_rate: Amount,
     #[serde(rename = "maxtxsize")]
     pub max_tx_size: u32,
-    #[serde(rename = "medianfee", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "medianfee", with = "dashcore::amount::serde::as_sat")]
     pub median_fee: Amount,
     #[serde(rename = "mediantime")]
     pub median_time: u64,
     #[serde(rename = "mediantxsize")]
     pub median_tx_size: u32,
-    #[serde(rename = "minfee", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "minfee", with = "dashcore::amount::serde::as_sat")]
     pub min_fee: Amount,
-    #[serde(rename = "minfeerate", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "minfeerate", with = "dashcore::amount::serde::as_sat")]
     pub min_fee_rate: Amount,
     #[serde(rename = "mintxsize")]
     pub min_tx_size: u32,
     pub outs: usize,
-    #[serde(with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(with = "dashcore::amount::serde::as_sat")]
     pub subsidy: Amount,
     pub time: u64,
-    #[serde(with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(with = "dashcore::amount::serde::as_sat")]
     pub total_out: Amount,
     #[serde(rename = "total_size")]
     pub total_size: usize,
-    #[serde(rename = "totalfee", with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(rename = "totalfee", with = "dashcore::amount::serde::as_sat")]
     pub total_fee: Amount,
     pub txs: usize,
     pub utxo_increase: i32,
@@ -294,14 +291,14 @@ pub struct GetBlockStatsResultPartial {
     #[serde(
         default,
         rename = "avgfee",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub avg_fee: Option<Amount>,
     #[serde(
         default,
         rename = "avgfeerate",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub avg_fee_rate: Option<Amount>,
@@ -318,14 +315,14 @@ pub struct GetBlockStatsResultPartial {
     #[serde(
         default,
         rename = "maxfee",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub max_fee: Option<Amount>,
     #[serde(
         default,
         rename = "maxfeerate",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub max_fee_rate: Option<Amount>,
@@ -334,7 +331,7 @@ pub struct GetBlockStatsResultPartial {
     #[serde(
         default,
         rename = "medianfee",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub median_fee: Option<Amount>,
@@ -345,14 +342,14 @@ pub struct GetBlockStatsResultPartial {
     #[serde(
         default,
         rename = "minfee",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub min_fee: Option<Amount>,
     #[serde(
         default,
         rename = "minfeerate",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub min_fee_rate: Option<Amount>,
@@ -362,7 +359,7 @@ pub struct GetBlockStatsResultPartial {
     pub outs: Option<usize>,
     #[serde(
         default,
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub subsidy: Option<Amount>,
@@ -370,7 +367,7 @@ pub struct GetBlockStatsResultPartial {
     pub time: Option<u64>,
     #[serde(
         default,
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub total_out: Option<Amount>,
@@ -379,7 +376,7 @@ pub struct GetBlockStatsResultPartial {
     #[serde(
         default,
         rename = "totalfee",
-        with = "dashcore::util::amount::serde::as_sat::opt",
+        with = "dashcore::amount::serde::as_sat::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub total_fee: Option<Amount>,
@@ -393,15 +390,15 @@ pub struct GetBlockStatsResultPartial {
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct FeeRatePercentiles {
-    #[serde(with = "dashcore::util::amount::serde::as_sat", rename = "10th_percentile_feerate")]
+    #[serde(with = "dashcore::amount::serde::as_sat", rename = "10th_percentile_feerate")]
     pub fr_10th: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_sat", rename = "25th_percentile_feerate")]
+    #[serde(with = "dashcore::amount::serde::as_sat", rename = "25th_percentile_feerate")]
     pub fr_25th: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_sat", rename = "50th_percentile_feerate")]
+    #[serde(with = "dashcore::amount::serde::as_sat", rename = "50th_percentile_feerate")]
     pub fr_50th: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_sat", rename = "75th_percentile_feerate")]
+    #[serde(with = "dashcore::amount::serde::as_sat", rename = "75th_percentile_feerate")]
     pub fr_75th: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_sat", rename = "90th_percentile_feerate")]
+    #[serde(with = "dashcore::amount::serde::as_sat", rename = "90th_percentile_feerate")]
     pub fr_90th: Amount,
 }
 
@@ -511,8 +508,8 @@ pub struct GetRawTransactionResultVinScriptSig {
 }
 
 impl GetRawTransactionResultVinScriptSig {
-    pub fn script(&self) -> Result<Script, encode::Error> {
-        Ok(Script::from(self.hex.clone()))
+    pub fn script(&self) -> Result<ScriptBuf, encode::Error> {
+        Ok(ScriptBuf::from(self.hex.clone()))
     }
 }
 
@@ -524,7 +521,7 @@ pub struct GetRawTransactionResultVin {
     pub script_sig: Option<GetRawTransactionResultVinScriptSig>,
     #[serde(deserialize_with = "deserialize_hex_opt")]
     pub coinbase: Option<Vec<u8>>,
-    #[serde(with = "dashcore::util::amount::serde::as_btc::opt")]
+    #[serde(with = "dashcore::amount::serde::as_btc::opt")]
     pub value: Option<Amount>,
     #[serde(rename = "valueSat")]
     pub value_sat: Option<u32>,
@@ -551,19 +548,19 @@ pub struct GetRawTransactionResultVoutScriptPubKey {
     pub req_sigs: Option<usize>,
     #[serde(rename = "type")]
     pub script_type: Option<ScriptPubkeyType>,
-    pub addresses: Option<Vec<Address>>,
+    pub addresses: Option<Vec<Address<NetworkUnchecked>>>,
 }
 
 impl GetRawTransactionResultVoutScriptPubKey {
-    pub fn script(&self) -> Result<Script, encode::Error> {
-        Ok(Script::from(self.hex.clone()))
+    pub fn script(&self) -> Result<ScriptBuf, encode::Error> {
+        Ok(ScriptBuf::from(self.hex.clone()))
     }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetRawTransactionResultVout {
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub value: Amount,
     #[serde(rename = "valueSat")]
     pub value_sat: u32,
@@ -659,13 +656,13 @@ pub enum GetTransactionResultDetailCategory {
 pub struct GetTransactionResultDetail {
     #[serde(rename = "involvesWatchonly")]
     pub involves_watchonly: bool,
-    pub address: Option<Address>,
+    pub address: Option<Address<NetworkUnchecked>>,
     pub category: GetTransactionResultDetailCategory,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub amount: SignedAmount,
     pub label: Option<String>,
     pub vout: u32,
-    #[serde(default, with = "dashcore::util::amount::serde::as_btc::opt")]
+    #[serde(default, with = "dashcore::amount::serde::as_btc::opt")]
     pub fee: Option<SignedAmount>,
     pub abandoned: Option<bool>,
 }
@@ -689,9 +686,9 @@ pub struct WalletTxInfo {
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct GetTransactionResult {
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub amount: SignedAmount,
-    #[serde(default, with = "dashcore::util::amount::serde::as_btc::opt")]
+    #[serde(default, with = "dashcore::amount::serde::as_btc::opt")]
     pub fee: Option<SignedAmount>,
     pub confirmations: i32,
     pub instantlock: bool,
@@ -745,7 +742,7 @@ pub struct ListSinceBlockResult {
 pub struct GetTxOutResult {
     pub bestblock: BlockHash,
     pub confirmations: u32,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub value: Amount,
     #[serde(rename = "scriptPubKey")]
     pub script_pub_key: GetRawTransactionResultVoutScriptPubKey,
@@ -757,13 +754,13 @@ pub struct GetTxOutResult {
 pub struct ListUnspentQueryOptions {
     #[serde(
         rename = "minimumAmount",
-        with = "dashcore::util::amount::serde::as_btc::opt",
+        with = "dashcore::amount::serde::as_btc::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub minimum_amount: Option<Amount>,
     #[serde(
         rename = "maximumAmount",
-        with = "dashcore::util::amount::serde::as_btc::opt",
+        with = "dashcore::amount::serde::as_btc::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub maximum_amount: Option<Amount>,
@@ -771,7 +768,7 @@ pub struct ListUnspentQueryOptions {
     pub maximum_count: Option<usize>,
     #[serde(
         rename = "minimumSumAmount",
-        with = "dashcore::util::amount::serde::as_btc::opt",
+        with = "dashcore::amount::serde::as_btc::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub minimum_sum_amount: Option<Amount>,
@@ -780,14 +777,14 @@ pub struct ListUnspentQueryOptions {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ListUnspentResultEntry {
-    pub txid: dashcore::Txid,
+    pub txid: Txid,
     pub vout: u32,
-    pub address: Option<Address>,
+    pub address: Option<Address<NetworkUnchecked>>,
     #[serde(rename = "scriptPubKey")]
-    pub script_pub_key: Script,
+    pub script_pub_key: ScriptBuf,
     #[serde(rename = "redeemScript")]
-    pub redeem_script: Option<Script>,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    pub redeem_script: Option<ScriptBuf>,
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub amount: Amount,
     pub confirmations: u32,
     pub spendable: bool,
@@ -804,9 +801,9 @@ pub struct ListUnspentResultEntry {
 pub struct ListReceivedByAddressResult {
     #[serde(default, rename = "involvesWatchonly")]
     pub involved_watch_only: bool,
-    pub address: Address,
+    pub address: Address<NetworkUnchecked>,
     pub account: String,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub amount: Amount,
     pub confirmations: u32,
     pub label: String,
@@ -923,9 +920,9 @@ pub enum GetAddressInfoResultLabel {
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct GetAddressInfoResult {
-    pub address: Address,
+    pub address: Address<NetworkUnchecked>,
     #[serde(rename = "scriptPubKey")]
-    pub script_pub_key: Script,
+    pub script_pub_key: ScriptBuf,
     #[serde(rename = "ismine")]
     pub is_mine: bool,
     #[serde(rename = "iswatchonly")]
@@ -1054,16 +1051,16 @@ pub struct GetMempoolEntryResult {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct GetMempoolEntryResultFees {
     /// Transaction fee in BTC
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub base: Amount,
     /// Transaction fee with fee deltas used for mining priority in BTC
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub modified: Amount,
     /// Modified fees (see above) of in-mempool ancestors (including this one) in BTC
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub ancestor: Amount,
     /// Modified fees (see above) of in-mempool descendants (including this one) in BTC
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub descendant: Amount,
 }
 
@@ -1086,7 +1083,7 @@ impl<'a> serde::Serialize for ImportMultiRequestScriptPubkey<'a> {
                 )
             }
             ImportMultiRequestScriptPubkey::Script(script) => {
-                serializer.serialize_str(&script.as_bytes().to_hex())
+                serializer.serialize_str(&script.to_string())
             }
         }
     }
@@ -1213,7 +1210,7 @@ pub struct ImportMultiResultError {
 pub struct ImportMultiResultImport {
     #[serde(rename = "scriptPubKey")]
     pub script_pub_key: Option<Vec<u8>>,
-    pub address: Option<Address>,
+    pub address: Option<Address<NetworkUnchecked>>,
     pub timestamp: ImportMultiRescanSince,
     #[serde(rename = "redeemscript")]
     pub redeem_script: Option<String>,
@@ -1245,7 +1242,7 @@ pub struct GetPeerInfoResult {
     /// Peer index
     pub id: u64,
     /// The IP address and port of the peer
-    pub addr: Address,
+    pub addr: Address<NetworkUnchecked>,
     /// Bind address of the connection to the peer
     // TODO: use a type for addrbind
     pub addrbind: String,
@@ -1308,7 +1305,7 @@ pub struct GetPeerInfoResult {
     /// Whether the peer is whitelisted
     /// Deprecated in Bitcoin Core v0.21
     pub whitelisted: Option<bool>,
-    #[serde(rename = "minfeefilter", default, with = "dashcore::util::amount::serde::as_btc::opt")]
+    #[serde(rename = "minfeefilter", default, with = "dashcore::amount::serde::as_btc::opt")]
     pub min_fee_filter: Option<Amount>,
     /// The total bytes sent aggregated by message type
     pub bytessent_per_msg: HashMap<String, u64>,
@@ -1395,7 +1392,7 @@ pub struct EstimateSmartFeeResult {
         default,
         rename = "feerate",
         skip_serializing_if = "Option::is_none",
-        with = "dashcore::util::amount::serde::as_btc::opt"
+        with = "dashcore::amount::serde::as_btc::opt"
     )]
     pub fee_rate: Option<Amount>,
     /// Errors encountered during processing.
@@ -1499,7 +1496,7 @@ pub struct GetBlockTemplateResult {
     #[serde(rename = "coinbaseaux")]
     pub coinbase_aux: HashMap<String, String>,
     /// Total funds available for the coinbase
-    #[serde(rename = "coinbasevalue", with = "dashcore::util::amount::serde::as_sat", default)]
+    #[serde(rename = "coinbasevalue", with = "dashcore::amount::serde::as_sat", default)]
     pub coinbase_value: Amount,
     // TODO figure out what is the data is represented to coinbasetxn
     // pub coinbasetxn:
@@ -1558,7 +1555,7 @@ pub struct GetBlockTemplateResultTransaction {
     /// list
     pub depends: Vec<u32>,
     /// The transaction fee
-    #[serde(with = "dashcore::util::amount::serde::as_sat")]
+    #[serde(with = "dashcore::amount::serde::as_sat")]
     pub fee: Amount,
     /// Transaction sigops
     pub sigops: u32,
@@ -1617,7 +1614,7 @@ pub enum GetBlockTemplateResulMutations {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct WalletCreateFundedPsbtResult {
     pub psbt: String,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub fee: Amount,
     #[serde(rename = "changepos")]
     pub change_position: i32,
@@ -1638,7 +1635,7 @@ pub struct WalletCreateFundedPsbtOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub add_inputs: Option<bool>,
     #[serde(rename = "changeAddress", skip_serializing_if = "Option::is_none")]
-    pub change_address: Option<Address>,
+    pub change_address: Option<Address<NetworkUnchecked>>,
     #[serde(rename = "changePosition", skip_serializing_if = "Option::is_none")]
     pub change_position: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1650,7 +1647,7 @@ pub struct WalletCreateFundedPsbtOptions {
     #[serde(
         rename = "feeRate",
         skip_serializing_if = "Option::is_none",
-        with = "dashcore::util::amount::serde::as_btc::opt"
+        with = "dashcore::amount::serde::as_btc::opt"
     )]
     pub fee_rate: Option<Amount>,
     #[serde(rename = "subtractFeeFromOutputs", skip_serializing_if = "Vec::is_empty")]
@@ -1770,7 +1767,7 @@ pub struct FundRawTransactionOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lock_unspents: Option<bool>,
     #[serde(
-        with = "dashcore::util::amount::serde::as_btc::opt",
+        with = "dashcore::amount::serde::as_btc::opt",
         skip_serializing_if = "Option::is_none"
     )]
     pub fee_rate: Option<Amount>,
@@ -1788,7 +1785,7 @@ pub struct FundRawTransactionOptions {
 #[serde(rename_all = "camelCase")]
 pub struct FundRawTransactionResult {
     pub hex: Vec<u8>,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub fee: Amount,
     #[serde(rename = "changepos")]
     pub change_position: i32,
@@ -1796,11 +1793,11 @@ pub struct FundRawTransactionResult {
 
 #[derive(Deserialize, Clone, PartialEq, Eq, Debug)]
 pub struct GetBalancesResultEntry {
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub trusted: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub untrusted_pending: Amount,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub immature: Amount,
 }
 
@@ -1821,15 +1818,15 @@ impl FundRawTransactionResult {
 #[derive(Serialize, Clone, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignRawTransactionInput {
-    pub txid: dashcore::Txid,
+    pub txid: Txid,
     pub vout: u32,
-    pub script_pub_key: Script,
+    pub script_pub_key: ScriptBuf,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub redeem_script: Option<Script>,
+    pub redeem_script: Option<ScriptBuf>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "dashcore::util::amount::serde::as_btc::opt"
+        with = "dashcore::amount::serde::as_btc::opt"
     )]
     pub amount: Option<Amount>,
 }
@@ -1853,7 +1850,7 @@ pub struct GetTxOutSetInfoResult {
     /// The estimated size of the chainstate on disk
     pub disk_size: u64,
     /// The total amount
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub total_amount: Amount,
 }
 
@@ -1929,19 +1926,19 @@ pub struct ScanTxOutResult {
     #[serde(rename = "bestblock")]
     pub best_block_hash: Option<BlockHash>,
     pub unspents: Vec<Utxo>,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub total_amount: Amount,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Utxo {
-    pub txid: dashcore::Txid,
+    pub txid: Txid,
     pub vout: u32,
-    pub script_pub_key: Script,
+    pub script_pub_key: ScriptBuf,
     #[serde(rename = "desc")]
     pub descriptor: String,
-    #[serde(with = "dashcore::util::amount::serde::as_btc")]
+    #[serde(with = "dashcore::amount::serde::as_btc")]
     pub amount: Amount,
     pub height: u64,
 }
@@ -2071,7 +2068,7 @@ pub struct MasternodeListDiffWithMasternodes {
 pub struct Payee {
     #[serde_as(as = "Bytes")]
     pub address: Vec<u8>,
-    pub script: Script,
+    pub script: ScriptBuf,
     pub amount: u64,
 }
 
