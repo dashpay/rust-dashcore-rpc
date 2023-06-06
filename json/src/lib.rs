@@ -2419,6 +2419,7 @@ pub struct MasternodeStatus {
     pub status: String,
 }
 
+/// Masternode sync status response for `mnsync_status` method
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct MnSyncStatus {
     #[serde(rename = "AssetID")]
@@ -2441,6 +2442,7 @@ pub struct MnSyncStatus {
     pub is_synced: bool,
 }
 
+/// Masternode Sync Assets
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Serialize, Deserialize)]
 #[repr(u16)]
 pub enum MnSyncAssetName {
