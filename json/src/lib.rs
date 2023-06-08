@@ -2217,7 +2217,7 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             consecutive_payments,
             pose_penalty,
             pose_revived_height,
-            pose_ban_height: Some(pose_ban_height),
+            pose_ban_height,
             revocation_reason,
             owner_address,
             voting_address,
@@ -2897,8 +2897,8 @@ pub struct DMNStateDiffIntermediate {
     pub pose_penalty: Option<u32>,
     #[serde(default, rename = "PoSeRevivedHeight", deserialize_with = "deserialize_u32_opt")]
     pub pose_revived_height: Option<u32>,
-    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
-    pub pose_ban_height: Option<u32>,
+    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_2opt")]
+    pub pose_ban_height: Option<Option<u32>>,
     #[serde(default)]
     pub revocation_reason: Option<u32>,
     #[serde(default)]
@@ -3260,6 +3260,17 @@ where
         return Ok(None);
     }
     Ok(Some(val as u32))
+}
+
+fn deserialize_u32_2opt<'de, D>(deserializer: D) -> Result<Option<Option<u32>>, D::Error>
+    where
+        D: Deserializer<'de>,
+{
+    let val = i64::deserialize(deserializer)?;
+    if val < 0 {
+        return Ok(Some(None));
+    }
+    Ok(Some(Some(val as u32)))
 }
 
 #[cfg(test)]
