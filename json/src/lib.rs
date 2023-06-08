@@ -2217,7 +2217,7 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             consecutive_payments,
             pose_penalty,
             pose_revived_height,
-            pose_ban_height: if pose_ban_height.is_some() { Some(pose_ban_height) } else { None },
+            pose_ban_height: Some(pose_ban_height),
             revocation_reason,
             owner_address,
             voting_address,
