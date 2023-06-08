@@ -2897,6 +2897,10 @@ pub struct DMNStateDiffIntermediate {
     pub pose_penalty: Option<u32>,
     #[serde(default, rename = "PoSeRevivedHeight", deserialize_with = "deserialize_u32_opt")]
     pub pose_revived_height: Option<u32>,
+    // there are 3 possible states
+    // =-1: Some(None)
+    // >=0: Some(Some(u32))
+    // missing field: None
     #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_2opt")]
     pub pose_ban_height: Option<Option<u32>>,
     #[serde(default)]
