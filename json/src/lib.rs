@@ -2135,7 +2135,7 @@ pub struct DMNStateDiff {
     pub consecutive_payments: Option<i32>,
     pub pose_penalty: Option<u32>,
     pub pose_revived_height: Option<u32>,
-    pub pose_ban_height: Option<u32>,
+    pub pose_ban_height: Option<Option<u32>>,
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
@@ -2217,7 +2217,7 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             consecutive_payments,
             pose_penalty,
             pose_revived_height,
-            pose_ban_height,
+            pose_ban_height: if pose_ban_height.is_some() { Some(pose_ban_height) } else { None },
             revocation_reason,
             owner_address,
             voting_address,
@@ -2261,7 +2261,7 @@ impl DMNState {
             },
             pose_ban_height: if self.pose_ban_height != newer.pose_ban_height {
                 has_diff = true;
-                newer.pose_ban_height
+                Some(newer.pose_ban_height)
             } else {
                 None
             },
@@ -2345,7 +2345,6 @@ impl DMNState {
             platform_http_port,
             ..
         } = diff;
-        self.pose_ban_height = pose_ban_height;
         self.pose_revived_height = pose_revived_height;
         if let Some(pub_key_operator) = pub_key_operator {
             self.pub_key_operator = pub_key_operator;
@@ -2366,6 +2365,9 @@ impl DMNState {
         }
         if let Some(payout_address) = payout_address {
             self.payout_address = payout_address;
+        }
+        if let Some(pose_ban_height) = pose_ban_height {
+            self.pose_ban_height = pose_ban_height;
         }
         if let Some(operator_payout_address) = operator_payout_address {
             self.operator_payout_address = operator_payout_address;
@@ -3143,6 +3145,7 @@ impl std::fmt::Display for ArrayConversionError {
 }
 
 impl Error for ArrayConversionError {}
+
 fn deserialize_address<'de, D>(deserializer: D) -> Result<[u8; 20], D::Error>
 where
     D: Deserializer<'de>,
