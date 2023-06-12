@@ -22,6 +22,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_with;
 
+use bincode::{Decode, Encode};
 use serde_repr::*;
 use std::collections::HashMap;
 use std::error::Error;
@@ -2025,7 +2026,7 @@ pub struct Masternode {
 
 // TODO: clean up the new structure + test deserialization
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, Encode, Decode)]
 pub enum MasternodeType {
     Regular,
     HighPerformance,
@@ -2132,7 +2133,7 @@ pub struct DMNStateDiff {
     pub consecutive_payments: Option<i32>,
     pub pose_penalty: Option<u32>,
     pub pose_revived_height: Option<u32>,
-    pub pose_ban_height: Option<u32>,
+    pub pose_ban_height: Option<Option<u32>>,
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
@@ -2258,7 +2259,7 @@ impl DMNState {
             },
             pose_ban_height: if self.pose_ban_height != newer.pose_ban_height {
                 has_diff = true;
-                newer.pose_ban_height
+                Some(newer.pose_ban_height)
             } else {
                 None
             },
@@ -2342,12 +2343,13 @@ impl DMNState {
             platform_http_port,
             ..
         } = diff;
-        self.pose_ban_height = pose_ban_height;
         self.pose_revived_height = pose_revived_height;
+        if let Some(pose_ban_height) = pose_ban_height {
+            self.pose_ban_height = pose_ban_height;
+        }
         if let Some(pub_key_operator) = pub_key_operator {
             self.pub_key_operator = pub_key_operator;
         }
-
         if let Some(service) = service {
             self.service = service
         }
@@ -2416,6 +2418,60 @@ pub struct MasternodeStatus {
     pub status: String,
 }
 
+/// Masternode sync status response for `mnsync_status` method
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct MnSyncStatus {
+    #[serde(rename = "AssetID")]
+    pub asset_id: u16,
+
+    #[serde(rename = "AssetName")]
+    #[serde(deserialize_with = "deserialize_mn_sync_asset_name")]
+    pub asset_name: MnSyncAssetName,
+
+    #[serde(rename = "AssetStartTime")]
+    pub asset_start_time: u32,
+
+    #[serde(rename = "Attempt")]
+    pub attempt: u16,
+
+    #[serde(rename = "IsBlockchainSynced")]
+    pub is_blockchain_synced: bool,
+
+    #[serde(rename = "IsSynced")]
+    pub is_synced: bool,
+}
+
+/// Masternode Sync Assets
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Serialize, Deserialize)]
+#[repr(u16)]
+pub enum MnSyncAssetName {
+    Initial = 0,
+    Blockchain = 1,
+    Governance = 2,
+    Finished = 999,
+}
+
+/// deserialize_mn_state deserializes a masternode state
+fn deserialize_mn_sync_asset_name<'de, D>(deserializer: D) -> Result<MnSyncAssetName, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let str_sequence = String::deserialize(deserializer)?;
+
+    Ok(match str_sequence.as_str() {
+        "MASTERNODE_SYNC_INITIAL" => MnSyncAssetName::Initial,
+        "MASTERNODE_SYNC_BLOCKCHAIN" => MnSyncAssetName::Blockchain,
+        "MASTERNODE_SYNC_GOVERNANCE" => MnSyncAssetName::Governance,
+        "MASTERNODE_SYNC_FINISHED" => MnSyncAssetName::Finished,
+        _ => {
+            return Err(de::Error::custom(format!(
+                "unknown masternode sync asset name: {}",
+                str_sequence
+            )))
+        }
+    })
+}
+
 // --------------------------- BLS -------------------------------
 
 #[serde_as]
@@ -2429,7 +2485,7 @@ pub struct BLS {
 
 // --------------------------- Quorum -------------------------------
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash, Encode, Decode)]
 #[repr(u8)]
 pub enum QuorumType {
     Llmq50_60 = 1,
@@ -2516,11 +2572,12 @@ impl From<&str> for QuorumType {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Encode, Decode)]
 #[serde(rename_all = "camelCase")]
 pub struct ExtendedQuorumDetails {
     pub creation_height: u32,
     pub quorum_index: Option<u32>,
+    #[bincode(with_serde)]
     pub mined_block_hash: BlockHash,
     pub num_valid_members: u32,
     #[serde(deserialize_with = "deserialize_f32")]
@@ -2843,8 +2900,12 @@ pub struct DMNStateDiffIntermediate {
     pub pose_penalty: Option<u32>,
     #[serde(default, rename = "PoSeRevivedHeight", deserialize_with = "deserialize_u32_opt")]
     pub pose_revived_height: Option<u32>,
-    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_opt")]
-    pub pose_ban_height: Option<u32>,
+    // there are 3 possible states
+    // =-1: Some(None)
+    // >=0: Some(Some(u32))
+    // missing field: None
+    #[serde(default, rename = "PoSeBanHeight", deserialize_with = "deserialize_u32_2opt")]
+    pub pose_ban_height: Option<Option<u32>>,
     #[serde(default)]
     pub revocation_reason: Option<u32>,
     #[serde(default)]
@@ -3091,6 +3152,7 @@ impl std::fmt::Display for ArrayConversionError {
 }
 
 impl Error for ArrayConversionError {}
+
 fn deserialize_address<'de, D>(deserializer: D) -> Result<[u8; 20], D::Error>
 where
     D: Deserializer<'de>,
@@ -3207,11 +3269,25 @@ where
     Ok(Some(val as u32))
 }
 
+fn deserialize_u32_2opt<'de, D>(deserializer: D) -> Result<Option<Option<u32>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let val = i64::deserialize(deserializer)?;
+    if val < 0 {
+        return Ok(Some(None));
+    }
+    Ok(Some(Some(val as u32)))
+}
+
 #[cfg(test)]
 mod tests {
     use dashcore::hashes::hex::ToHex;
+    use serde_json::json;
 
-    use crate::{deserialize_u32_opt, ExtendedQuorumListResult, MasternodeListDiff, QuorumType};
+    use crate::{
+        deserialize_u32_opt, ExtendedQuorumListResult, MasternodeListDiff, MnSyncStatus, QuorumType,
+    };
 
     #[test]
     fn test_deserialize_u32_opt() {
@@ -3370,5 +3446,22 @@ mod tests {
             hex::encode(result.added_mns[0].state.pub_key_operator.clone()),
             "invalid pub_key_operator"
         );
+    }
+
+    #[test]
+    fn deserialize_mnsync_status() {
+        let json_value = json!({
+          "AssetID": 999,
+          "AssetName": "MASTERNODE_SYNC_FINISHED",
+          "AssetStartTime": 1507662300,
+          "Attempt": 0,
+          "IsBlockchainSynced": true,
+          "IsSynced": true,
+        });
+
+        let result: MnSyncStatus =
+            serde_json::from_value(json_value).expect("expected to deserialize json");
+
+        println!("{:#?}", result);
     }
 }
