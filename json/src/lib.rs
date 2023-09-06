@@ -2023,7 +2023,7 @@ pub enum MasternodeType {
 }
 
 #[serde_as]
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MasternodeListItem {
     #[serde(rename = "type")]
@@ -2033,7 +2033,7 @@ pub struct MasternodeListItem {
     pub collateral_index: u32,
     #[serde(deserialize_with = "deserialize_address")]
     pub collateral_address: [u8; 20],
-    pub operator_reward: u32,
+    pub operator_reward: f32,
     pub state: DMNState,
 }
 
@@ -2914,7 +2914,7 @@ pub struct DMNStateDiffIntermediate {
     pub pub_key_operator: Option<Vec<u8>>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(from = "MasternodeListDiffIntermediate")]
 pub struct MasternodeListDiff {
@@ -2928,7 +2928,7 @@ pub struct MasternodeListDiff {
     pub updated_mns: Vec<(ProTxHash, DMNStateDiff)>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MasternodeListDiffIntermediate {
     base_height: u32,
