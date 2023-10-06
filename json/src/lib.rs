@@ -2042,8 +2042,8 @@ pub struct MasternodeListItem {
     pub pro_tx_hash: ProTxHash,
     pub collateral_hash: Txid,
     pub collateral_index: u32,
-    #[serde(deserialize_with = "deserialize_address")]
-    pub collateral_address: [u8; 20],
+    #[serde(deserialize_with = "deserialize_address_optional")]
+    pub collateral_address: Option<[u8; 20]>,
     pub operator_reward: f32,
     pub state: DMNState,
 }
@@ -2107,8 +2107,8 @@ pub struct DMNState {
     pub owner_address: [u8; 20],
     #[serde(deserialize_with = "deserialize_address")]
     pub voting_address: [u8; 20],
-    #[serde(deserialize_with = "deserialize_address")]
-    pub payout_address: [u8; 20],
+    #[serde(deserialize_with = "deserialize_address_optional")]
+    pub payout_address: Option<[u8; 20]>,
     #[serde(with = "hex")]
     pub pub_key_operator: Vec<u8>,
     #[serde(default, deserialize_with = "deserialize_address_optional")]
@@ -2138,7 +2138,7 @@ pub struct DMNStateDiff {
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
-    pub payout_address: Option<[u8; 20]>,
+    pub payout_address: Option<Option<[u8; 20]>>,
     pub pub_key_operator: Option<Vec<u8>>,
     pub operator_payout_address: Option<Option<[u8; 20]>>,
     pub platform_node_id: Option<[u8; 20]>,
@@ -2186,23 +2186,29 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
                 })
             })
             .transpose()?;
+
         let payout_address = payout_address
             .map(|address| {
                 let address = Address::from_str(address.as_str())?;
-                address.payload_to_vec().try_into().map_err(|_| encode::Error::InvalidVectorSize {
+                let address_bytes = address.payload_to_vec();
+                let len = address_bytes.len();
+
+                address_bytes.try_into().map_err(|_| encode::Error::InvalidVectorSize {
                     expected: 20,
-                    actual: address.payload_to_vec().len(),
+                    actual: len,
                 })
             })
-            .transpose()?;
+            .transpose()?.map(Some);
+
         let operator_payout_address = None; //todo
 
         let platform_node_id = platform_node_id
             .map(|address| {
-                let address =
+                let address_bytes =
                     hex::decode(address).map_err(|_| encode::Error::Hex(InvalidChar(0)))?;
-                let len = address.len();
-                address.try_into().map_err(|_| encode::Error::InvalidVectorSize {
+                let len = address_bytes.len();
+
+                address_bytes.try_into().map_err(|_| encode::Error::InvalidVectorSize {
                     expected: 20,
                     actual: len,
                 })
