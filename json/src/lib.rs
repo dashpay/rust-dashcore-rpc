@@ -28,7 +28,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::net::SocketAddr;
+use std::net::{SocketAddr};
 use std::str::FromStr;
 
 use dashcore::address;
@@ -117,6 +117,15 @@ pub struct AddMultiSigAddressResult {
 pub struct LoadWalletResult {
     pub name: String,
     pub warning: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum UnloadWalletResult {
+    Empty(),
+    Warning {
+        warning: String,
+    }
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -1238,7 +1247,7 @@ pub struct GetPeerInfoResult {
     /// Peer index
     pub id: u64,
     /// The IP address and port of the peer
-    pub addr: Address<NetworkUnchecked>,
+    pub addr: SocketAddr,
     /// Bind address of the connection to the peer
     // TODO: use a type for addrbind
     pub addrbind: String,
@@ -1474,7 +1483,7 @@ pub struct GetBlockTemplateResult {
     pub rules: Vec<GetBlockTemplateResultRules>,
     /// Set of pending, supported versionbit (BIP 9) softfork deployments
     #[serde(rename = "vbavailable")]
-    pub version_bits_available: HashMap<u32, String>,
+    pub version_bits_available: HashMap<String, u32>,
     /// Bit mask of versionbits the server requires set in submissions
     #[serde(rename = "vbrequired")]
     pub version_bits_required: u32,
@@ -1497,6 +1506,7 @@ pub struct GetBlockTemplateResult {
     // TODO figure out what is the data is represented to coinbasetxn
     // pub coinbasetxn:
     /// The number which valid hashes must be less than, in big-endian
+    #[serde(with = "hex")]
     pub target: Vec<u8>,
     /// The minimum timestamp appropriate for the next block time. Expressed as
     /// UNIX timestamp.
@@ -1508,7 +1518,7 @@ pub struct GetBlockTemplateResult {
     // TODO figure out what is the data is represented to value
     // pub value:
     /// A range of valid nonces
-    #[serde(rename = "noncerange")]
+    #[serde(with = "hex", rename = "noncerange")]
     pub nonce_range: Vec<u8>,
     /// Block sigops limit
     #[serde(rename = "sigoplimit")]
@@ -1569,20 +1579,13 @@ pub enum GetBlockTemplateResultCapabilities {
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum GetBlockTemplateResultRules {
-    /// Inidcates that the client must support the SegWit rules when using this
-    /// template.
-    #[serde(alias = "!segwit")]
-    SegWit,
-    /// Indicates that the client must support the Signet rules when using this
-    /// template.
-    #[serde(alias = "!signet")]
-    Signet,
     /// Indicates that the client must support the CSV rules when using this
     /// template.
     Csv,
-    /// Indicates that the client must support the taproot rules when using this
+    /// Indicates that the client must support the v20 rules when using this
     /// template.
-    Taproot,
+    #[serde(alias = "!signet")]
+    V20,
     /// Indicates that the client must support the Regtest rules when using this
     /// template. TestDummy is a test soft-fork only used on the regtest network.
     Testdummy,
