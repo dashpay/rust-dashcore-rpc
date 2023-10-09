@@ -209,8 +209,6 @@ fn main() {
     test_combine_psbt(&cl);
     test_finalize_psbt(&cl);
     test_list_received_by_address(&cl);
-    */
-
     test_scantxoutset(&cl);
     test_import_public_key(&cl);
     test_import_priv_key(&cl);
@@ -228,8 +226,17 @@ fn main() {
     test_get_net_totals(&cl);
     test_get_network_hash_ps(&cl);
     test_uptime(&cl);
-    // TODO: fix - falinig
+
+    // TODO: requires peers as well?
     // test_getblocktemplate(&cl);
+
+    test_add_node(&cl);
+    test_get_added_node_info(&cl);
+    test_get_node_addresses(&cl);
+    test_disconnect_node(&cl);
+    test_add_ban(&cl);
+    test_set_network_active(&cl);
+    */
 
     // //TODO import_multi(
     // //TODO verify_message(
@@ -244,19 +251,9 @@ fn main() {
     // //TODO unload_wallet(&self, wallet: Option<&str>) -> Result<()> {
     // //TODO backup_wallet(&self, destination: Option<&str>) -> Result<()> {
 
-    // TODO: fix - falinig
-    // test_add_node(&cl);
-    // TODO: fix - falinig
-    // test_get_added_node_info(&cl);
-    test_get_node_addresses(&cl);
-    // TODO: fix - falinig
-    // test_disconnect_node(&cl);
-    // TODO: fix - falinig
-    // test_add_ban(&cl);
-    test_set_network_active(&cl);
     // TODO: fix - run masternode
     // test_get_masternode_count(&cl);
-    test_get_masternode_list(&cl);
+    // test_get_masternode_list(&cl);
     // TODO: fix - run masternode
     // test_get_masternode_outputs(&cl);
     // TODO: fix - run masternode
