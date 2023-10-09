@@ -263,12 +263,11 @@ fn main() {
 
     test_get_quorum_list(&cl);
     test_get_quorum_listextended(&cl);
-    // TODO: fix - run masternode
-    // test_get_quorum_info(&cl);
-    return;
+    test_get_quorum_info(&cl);
     test_get_quorum_dkgstatus(&cl);
     test_get_quorum_sign(&cl);
     // test_get_quorum_getrecsig(&cl);
+    return;
     // TODO: fix - run masternode
     // test_get_quorum_hasrecsig(&cl);
     // TODO: fix - run masternode
@@ -1297,12 +1296,13 @@ fn test_get_quorum_listextended(cl: &Client) {
 }
 
 fn test_get_quorum_info(cl: &Client) {
-    let qh =
-        QuorumHash::from_str("000000000c9eddd5d2a707281b7e30d5aac974dac600ff10f01937e1ca36066f")
-            .unwrap();
-    let quorum_info = cl.get_quorum_info(QuorumType::Llmq50_60, &qh, None).unwrap();
+    let list = cl.get_quorum_list(Some(1)).unwrap();
+    let quorum_type = list.quorums_by_type.keys().next().unwrap().to_owned();
+    let quorum_hash = list.quorums_by_type.get(&quorum_type).unwrap()[0];
+
+    let quorum_info = cl.get_quorum_info(quorum_type, &quorum_hash, None).unwrap();
     assert!(quorum_info.height > 0);
-    // assert!(quorum_info.members.len() >= 0);
+    assert!(quorum_info.members.len() >= 0);
 }
 
 fn test_get_quorum_dkgstatus(cl: &Client) {
@@ -1314,9 +1314,17 @@ fn test_get_quorum_dkgstatus(cl: &Client) {
 }
 
 fn test_get_quorum_sign(cl: &Client) {
+    // let address = Address::<NetworkUnchecked>::from_str("yemjhGQ99V5ayJMjoyGGPtxteahii6G1Jz").unwrap()
+    //     .require_network(*NET).unwrap();
+    // let tx = cl.send_to_address(&address, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    // print!("tx: {}", tx);
+
+    let list = cl.get_quorum_list(Some(1)).unwrap();
+    let quorum_type = list.quorums_by_type.keys().next().unwrap().to_owned();
+
     let _quorum_dkgstatus = cl
         .get_quorum_sign(
-            LlmqTest,
+            quorum_type,
             "abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234",
             "51c11d287dfa85aef3eebb5420834c8e443e01d15c0b0a8e397d67e2e51aa239",
             None,
@@ -1326,9 +1334,12 @@ fn test_get_quorum_sign(cl: &Client) {
 }
 
 fn test_get_quorum_getrecsig(cl: &Client) {
+    let list = cl.get_quorum_list(Some(1)).unwrap();
+    let quorum_type = list.quorums_by_type.keys().next().unwrap().to_owned();
+
     let _quorum_getrecsig = cl
         .get_quorum_getrecsig(
-            LlmqTest,
+            quorum_type,
             "abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234",
             "51c11d287dfa85aef3eebb5420834c8e443e01d15c0b0a8e397d67e2e51aa239",
         )
