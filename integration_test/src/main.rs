@@ -236,6 +236,16 @@ fn main() {
     test_disconnect_node(&cl);
     test_add_ban(&cl);
     test_set_network_active(&cl);
+
+    test_get_masternode_count(&cl);
+    test_get_masternode_list(&cl);
+
+    // TODO: Requested wallet does not exist or is not loaded
+    // test_get_masternode_outputs(&cl);
+
+    test_get_masternode_payments(&cl);
+    test_get_masternode_status(&cl);
+    test_get_masternode_winners(&cl);
     */
 
     // //TODO import_multi(
@@ -251,20 +261,11 @@ fn main() {
     // //TODO unload_wallet(&self, wallet: Option<&str>) -> Result<()> {
     // //TODO backup_wallet(&self, destination: Option<&str>) -> Result<()> {
 
-    // TODO: fix - run masternode
-    // test_get_masternode_count(&cl);
-    // test_get_masternode_list(&cl);
-    // TODO: fix - run masternode
-    // test_get_masternode_outputs(&cl);
-    // TODO: fix - run masternode
-    // test_get_masternode_payments(&cl);
-    // TODO: fix - run masternode
-    // test_get_masternode_status(&cl);
-    test_get_masternode_winners(&cl);
     test_get_quorum_list(&cl);
     test_get_quorum_listextended(&cl);
     // TODO: fix - run masternode
     // test_get_quorum_info(&cl);
+    return;
     test_get_quorum_dkgstatus(&cl);
     test_get_quorum_sign(&cl);
     // test_get_quorum_getrecsig(&cl);
