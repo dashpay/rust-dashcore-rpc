@@ -53,6 +53,10 @@ lazy_static! {
     static ref FAUCET_WALLET_NAME: &'static str = "main";
     // Default name for test wallet
     static ref TEST_WALLET_NAME: &'static str = "testwallet";
+    // Default RPC url for wallet node
+    static ref DEFAULT_WALLET_NODE_RPC_URL: &'static str = "http://127.0.0.1:20002";
+    // Default RPC url for evo node
+    static ref DEFAULT_EVO_NODE_RPC_URL: &'static str = "http://127.0.0.1:20302";
 }
 
 struct StdLogger;
@@ -104,11 +108,17 @@ macro_rules! assert_error_message {
     };
 }
 
-static mut VERSION: usize = 0;
+static mut WALLET_NODE_VERSION: usize = 0;
+static mut EVO_NODE_VERSION: usize = 0;
 
-/// Get the version of the node that is running.
-fn version() -> usize {
-    unsafe { VERSION }
+/// Get the version of the wallet node that is running.
+fn wallet_node_version() -> usize {
+    unsafe { WALLET_NODE_VERSION }
+}
+
+/// Get the version of the evo node that is running.
+fn evo_node_version() -> usize {
+    unsafe { EVO_NODE_VERSION }
 }
 
 /// Quickly create a BTC amount.
@@ -121,43 +131,108 @@ fn sbtc<F: Into<f64>>(btc: F) -> SignedAmount {
     SignedAmount::from_btc(btc.into()).unwrap()
 }
 
-fn get_rpc_url() -> String {
-    return std::env::var("RPC_URL").expect("RPC_URL must be set");
+fn get_rpc_urls() -> (Option<String>, Option<String>) {
+    let wallet_node_url = std::env::var("WALLET_NODE_RPC_URL")
+        .ok()
+        .filter(|s| !s.is_empty());
+
+    let evo_node_rpc_url = std::env::var("EVO_NODE_RPC_URL")
+        .ok()
+        .filter(|s| !s.is_empty());
+
+
+    (wallet_node_url, evo_node_rpc_url)
 }
 
-fn get_auth() -> Auth {
-    if let Ok(cookie) = std::env::var("RPC_COOKIE") {
-        return Auth::CookieFile(cookie.into());
-    } else if let Ok(user) = std::env::var("RPC_USER") {
-        return Auth::UserPass(user, std::env::var("RPC_PASS").unwrap_or_default());
-    } else {
-        panic!("Either RPC_COOKIE or RPC_USER + RPC_PASS must be set.");
-    };
+fn get_auth() -> (Auth, Auth) {
+    let wallet_node_auth = std::env::var("WALLET_NODE_RPC_COOKIE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(|cookie| Auth::CookieFile(cookie.into()))
+        .unwrap_or_else(|| {
+            std::env::var("WALLET_NODE_RPC_USER")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .map(|user| {
+                    Auth::UserPass(
+                        user,
+                        std::env::var("WALLET_NODE_RPC_PASS").unwrap_or_default(),
+                    )
+                })
+                .unwrap_or(Auth::None)
+        });
+
+
+    let evo_node_auth = std::env::var("EVO_NODE_RPC_COOKIE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .map(|cookie| Auth::CookieFile(cookie.into()))
+        .unwrap_or_else(|| {
+            std::env::var("EVO_NODE_RPC_USER")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .map(|user| {
+                    Auth::UserPass(
+                        user,
+                        std::env::var("EVO_NODE_RPC_PASS").unwrap_or_default()
+                    )
+                })
+                .unwrap_or(Auth::None)
+        });
+
+    (wallet_node_auth, evo_node_auth)
 }
 
 fn main() {
     log::set_logger(&LOGGER).map(|()| log::set_max_level(log::LevelFilter::max())).unwrap();
 
-    let auth = get_auth();
+    let (wallet_node_auth, evo_node_auth) = get_auth();
+    let (wallet_node_rpc_url, evo_node_rpc_url) = get_rpc_urls();
 
-    let faucet_rpc_url = format!("{}/wallet/{}", get_rpc_url(), FAUCET_WALLET_NAME.to_string());
-    let wallet_rpc_url = format!("{}/wallet/{}", get_rpc_url(), TEST_WALLET_NAME.to_string());
+    let wallet_node_rpc_url = wallet_node_rpc_url.unwrap_or(DEFAULT_WALLET_NODE_RPC_URL.to_string());
+    let evo_node_rpc_url = evo_node_rpc_url.unwrap_or(DEFAULT_EVO_NODE_RPC_URL.to_string());
 
-    let faucet_client = Client::new(&faucet_rpc_url, auth.clone()).unwrap();
-    let cl = Client::new(&wallet_rpc_url, auth).unwrap();
+    let wallet_node_auth_type = match &wallet_node_auth {
+        Auth::UserPass(_, _) => "UserPass",
+        Auth::CookieFile(_) => "CookieFile",
+        Auth::None => "None"
+    };
 
-    test_get_network_info(&cl);
-    unsafe { VERSION = cl.version().unwrap() };
-    trace!(target: "integration_test", "RPC client version: {}", version());
+    let evo_node_auth_type = match &evo_node_auth {
+        Auth::UserPass(_, _) => "UserPass",
+        Auth::CookieFile(_) => "CookieFile",
+        Auth::None => "None"
+    };
 
-    let blockchain_info = cl.get_blockchain_info().unwrap();
+    trace!(target: "integration_test", "Wallet node RPC URL: {}", &wallet_node_rpc_url);
+    trace!(target: "integration_test", "Wallet node Auth: {:?}", wallet_node_auth_type);
+    trace!(target: "integration_test", "Evo node RPC URL: {}", &evo_node_rpc_url);
+    trace!(target: "integration_test", "Evo node RPC Auth: {:?}", evo_node_auth_type);
+
+    let faucet_rpc_url = format!("{}/wallet/{}", wallet_node_rpc_url, FAUCET_WALLET_NAME.to_string());
+    let wallet_rpc_url = format!("{}/wallet/{}", wallet_node_rpc_url, TEST_WALLET_NAME.to_string());
+    let evo_rpc_url = format!("{}/wallet/{}", evo_node_rpc_url, TEST_WALLET_NAME.to_string());
+
+    let faucet_client = Client::new(&faucet_rpc_url, wallet_node_auth.clone().clone()).unwrap();
+    let wallet_client = Client::new(&wallet_rpc_url, wallet_node_auth).unwrap();
+    let evo_client = Client::new(&evo_rpc_url, evo_node_auth).unwrap();
+
+    test_get_network_info(&wallet_client);
+    test_get_network_info(&evo_client);
+    unsafe { WALLET_NODE_VERSION = wallet_client.version().unwrap() };
+    unsafe { EVO_NODE_VERSION = evo_client.version().unwrap() };
+    trace!(target: "integration_test", "Wallet node RPC client version: {}", wallet_node_version());
+    trace!(target: "integration_test", "Evo node RPC client version: {}", evo_node_version());
+
+    wallet_client.get_blockchain_info().unwrap();
+    evo_client.get_blockchain_info().unwrap();
 
     // Create/Load test wallet to perform operations on RPC
-    match cl.load_wallet(&TEST_WALLET_NAME) {
+    match wallet_client.load_wallet(&TEST_WALLET_NAME) {
         Err(e) => {
             match e {
                 dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -18 => {
-                    cl.create_wallet(&TEST_WALLET_NAME, None, None, None, None).unwrap();
+                    wallet_client.create_wallet(&TEST_WALLET_NAME, None, None, None, None).unwrap();
                     trace!(target: "integration_test", "Wallet \"{}\" created", TEST_WALLET_NAME.to_string());
                 },
                 dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -35 => {
@@ -174,7 +249,7 @@ fn main() {
     }
 
     // Fund test wallet
-    let test_wallet_address = cl.get_new_address(None).unwrap()
+    let test_wallet_address = wallet_client.get_new_address(None).unwrap()
         .require_network(*NET).unwrap();
 
     faucet_client.send_to_address(&test_wallet_address, btc(1.0), None, None, None, None, None, None, None, None).unwrap();
@@ -183,85 +258,85 @@ fn main() {
     trace!(target: "integration_test", "Funded wallet \"{}\". Total balance: {}", TEST_WALLET_NAME.to_string(), balance);
 
     /* Fixed
-    test_get_mining_info(&cl);
-    test_get_blockchain_info(&cl);
-    test_get_new_address(&cl);
-    test_dump_private_key(&cl);
-    test_get_balance_generate_to_address(&cl);
-    test_get_balances_generate_to_address(&cl);
-    test_get_best_block_hash(&cl);
-    test_get_best_chain_lock(&cl);
-    test_get_block_count(&cl);
-    test_get_block_hash(&cl);
+    test_get_mining_info(&wallet_client);
+    test_get_blockchain_info(&wallet_client);
+    test_get_new_address(&wallet_client);
+    test_dump_private_key(&wallet_client);
+    test_get_balance_generate_to_address(&wallet_client);
+    test_get_balances_generate_to_address(&wallet_client);
+    test_get_best_block_hash(&wallet_client);
+    test_get_best_chain_lock(&wallet_client);
+    test_get_block_count(&wallet_client);
+    test_get_block_hash(&wallet_client);
     // TODO(dashcore): - fails parsing block
-    test_get_block(&cl);
-    test_get_block_header_get_block_header_info(&cl);
-    test_get_block_stats(&cl);
-    test_get_address_info(&cl);
-    test_set_label(&cl);
-    test_send_to_address(&cl);
-    test_get_received_by_address(&cl);
-    test_list_unspent(&cl);
-    test_get_difficulty(&cl);
-    test_get_connection_count(&cl);
-    test_get_raw_transaction(&cl);
-    test_get_raw_mempool(&cl);
-    test_get_transaction(&cl);
-    test_list_transactions(&cl);
-    test_list_since_block(&cl);
-    test_get_tx_out(&cl);
+    test_get_block(&wallet_client);
+    test_get_block_header_get_block_header_info(&wallet_client);
+    test_get_block_stats(&wallet_client);
+    test_get_address_info(&wallet_client);
+    test_set_label(&wallet_client);
+    test_send_to_address(&wallet_client);
+    test_get_received_by_address(&wallet_client);
+    test_list_unspent(&wallet_client);
+    test_get_difficulty(&wallet_client);
+    test_get_connection_count(&wallet_client);
+    test_get_raw_transaction(&wallet_client);
+    test_get_raw_mempool(&wallet_client);
+    test_get_transaction(&wallet_client);
+    test_list_transactions(&wallet_client);
+    test_list_since_block(&wallet_client);
+    test_get_tx_out(&wallet_client);
     // TODO: fix - fails because of a consensus delay when calling `generate_to_address` inside
-    test_get_tx_out_proof(&cl);
-    test_get_mempool_entry(&cl);
-    test_lock_unspent_unlock_unspent(&cl);
+    test_get_tx_out_proof(&wallet_client);
+    test_get_mempool_entry(&wallet_client);
+    test_lock_unspent_unlock_unspent(&wallet_client);
     // TODO: fix
-    // test_get_block_filter(&cl);
-    test_invalidate_block_reconsider_block(&cl);
-    test_key_pool_refill(&cl);
-    test_sign_raw_transaction_with_send_raw_transaction(&cl);
-    test_create_raw_transaction(&cl);
-    test_fund_raw_transaction(&cl);
-    test_test_mempool_accept(&cl);
-    test_wallet_create_funded_psbt(&cl);
-    test_wallet_process_psbt(&cl);
-    test_combine_psbt(&cl);
-    test_finalize_psbt(&cl);
-    test_list_received_by_address(&cl);
-    test_scantxoutset(&cl);
-    test_import_public_key(&cl);
-    test_import_priv_key(&cl);
-    test_import_address(&cl);
-    test_import_address_script(&cl);
-    test_estimate_smart_fee(&cl);
-    test_ping(&cl);
-    test_get_peer_info(&cl);
-    test_rescan_blockchain(&cl);
-    test_create_wallet(&cl);
-    test_get_tx_out_set_info(&cl);
-    test_get_chain_tips(&cl);
-    test_get_net_totals(&cl);
-    test_get_network_hash_ps(&cl);
-    test_uptime(&cl);
-    test_getblocktemplate(&cl);
-    test_add_node(&cl);
-    test_get_added_node_info(&cl);
-    test_get_node_addresses(&cl);
-    test_disconnect_node(&cl);
-    test_add_ban(&cl);
-    test_set_network_active(&cl);
+    // test_get_block_filter(&wallet_client);
+    test_invalidate_block_reconsider_block(&wallet_client);
+    test_key_pool_refill(&wallet_client);
+    test_sign_raw_transaction_with_send_raw_transaction(&wallet_client);
+    test_create_raw_transaction(&wallet_client);
+    test_fund_raw_transaction(&wallet_client);
+    test_test_mempool_accept(&wallet_client);
+    test_wallet_create_funded_psbt(&wallet_client);
+    test_wallet_process_psbt(&wallet_client);
+    test_combine_psbt(&wallet_client);
+    test_finalize_psbt(&wallet_client);
+    test_list_received_by_address(&wallet_client);
+    test_scantxoutset(&wallet_client);
+    test_import_public_key(&wallet_client);
+    test_import_priv_key(&wallet_client);
+    test_import_address(&wallet_client);
+    test_import_address_script(&wallet_client);
+    test_estimate_smart_fee(&wallet_client);
+    test_ping(&wallet_client);
+    test_get_peer_info(&wallet_client);
+    test_rescan_blockchain(&wallet_client);
+    test_create_wallet(&wallet_client);
+    test_get_tx_out_set_info(&wallet_client);
+    test_get_chain_tips(&wallet_client);
+    test_get_net_totals(&wallet_client);
+    test_get_network_hash_ps(&wallet_client);
+    test_uptime(&wallet_client);
+    test_getblocktemplate(&wallet_client);
+    test_add_node(&wallet_client);
+    test_get_added_node_info(&wallet_client);
+    test_get_node_addresses(&wallet_client);
+    test_disconnect_node(&wallet_client);
+    test_add_ban(&wallet_client);
+    test_set_network_active(&wallet_client);
     */
 
     return;
 
-    // test_get_masternode_count(&cl);
-    // test_get_masternode_list(&cl);
+    // test_get_masternode_count(&evo_client);
+    // test_get_masternode_list(&evo_client);
 
     // TODO: Requested wallet does not exist or is not loaded
-    // test_get_masternode_outputs(&cl);
+    // test_get_masternode_outputs(&evo_client);
 
-    test_get_masternode_payments(&cl);
-    test_get_masternode_status(&cl);
-    test_get_masternode_winners(&cl);
+    test_get_masternode_payments(&evo_client);
+    test_get_masternode_status(&evo_client);
+    test_get_masternode_winners(&evo_client);
     // */
 
     // //TODO import_multi(
@@ -277,56 +352,56 @@ fn main() {
     // //TODO unload_wallet(&self, wallet: Option<&str>) -> Result<()> {
     // //TODO backup_wallet(&self, destination: Option<&str>) -> Result<()> {
 
-    test_get_quorum_list(&cl);
-    test_get_quorum_listextended(&cl);
-    test_get_quorum_info(&cl);
-    test_get_quorum_dkgstatus(&cl);
-    test_get_quorum_sign(&cl);
-    // test_get_quorum_getrecsig(&cl);
+    test_get_quorum_list(&evo_client);
+    test_get_quorum_listextended(&evo_client);
+    test_get_quorum_info(&evo_client);
+    test_get_quorum_dkgstatus(&evo_client);
+    test_get_quorum_sign(&evo_client);
+    // test_get_quorum_getrecsig(&evo_client);
     return;
     // TODO: fix - run masternode
-    // test_get_quorum_hasrecsig(&cl);
+    // test_get_quorum_hasrecsig(&evo_client);
     // TODO: fix - run masternode
-    // test_get_quorum_isconflicting(&cl);
+    // test_get_quorum_isconflicting(&evo_client);
     // TODO: fix - run masternode
-    // test_get_quorum_memberof(&cl);
+    // test_get_quorum_memberof(&evo_client);
     // TODO: fix - run masternode
-    // test_get_quorum_rotationinfo(&cl);
+    // test_get_quorum_rotationinfo(&evo_client);
     // TODO: fix - run masternode
-    // test_get_quorum_selectquorum(&cl);
+    // test_get_quorum_selectquorum(&evo_client);
     // TODO: fix - run masternode
-    // test_get_quorum_verify(&cl);
+    // test_get_quorum_verify(&evo_client);
     // TODO: fix - run masternode
-    // test_get_bls_fromsecret(&cl);
+    // test_get_bls_fromsecret(&evo_client);
     // TODO: fix - run masternode
-    // test_get_bls_generate(&cl);
+    // test_get_bls_generate(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_diff(&cl);
+    // test_get_protx_diff(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_info(&cl);
+    // test_get_protx_info(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_list(&cl);
+    // test_get_protx_list(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_register(&cl);
+    // test_get_protx_register(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_register_fund(&cl);
+    // test_get_protx_register_fund(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_register_prepare(&cl);
+    // test_get_protx_register_prepare(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_register_submit(&cl);
+    // test_get_protx_register_submit(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_revoke(&cl)
+    // test_get_protx_revoke(&evo_client)
     // TODO: fix - run masternode
-    // test_get_protx_update_registrar(&cl);
+    // test_get_protx_update_registrar(&evo_client);
     // TODO: fix - run masternode
-    // test_get_protx_update_service(&cl);
+    // test_get_protx_update_service(&evo_client);
     // TODO: fix - run masternode
-    // test_get_verifychainlock(&cl);
+    // test_get_verifychainlock(&evo_client);
     // TODO: fix - run masternode
-    // test_get_verifyislock(&cl);
+    // test_get_verifyislock(&evo_client);
 
     // TODO: enable when running container in detached mode
-    // test_stop(&cl);
+    // test_stop(&evo_client);
 }
 
 fn test_get_network_info(cl: &Client) {
@@ -376,7 +451,7 @@ fn test_get_balance_generate_to_address(cl: &Client) {
 }
 
 fn test_get_balances_generate_to_address(cl: &Client) {
-    if version() >= 190000 {
+    if wallet_node_version() >= 190000 {
         let initial = cl.get_balances().unwrap();
 
         let address = cl.get_new_address(None).unwrap()
@@ -462,7 +537,7 @@ fn test_set_label(cl: &Client) {
     let addr = cl.get_new_address(Some("label")).unwrap()
         .require_network(*NET).unwrap();
     let info = cl.get_address_info(&addr).unwrap();
-    if version() >= 0_20_00_00 {
+    if wallet_node_version() >= 0_20_00_00 {
         assert!(info.label.is_none());
         assert_eq!(info.labels[0], json::GetAddressInfoResultLabel::Simple("label".into()));
     } else {
@@ -478,7 +553,7 @@ fn test_set_label(cl: &Client) {
 
     cl.set_label(&addr, "other").unwrap();
     let info = cl.get_address_info(&addr).unwrap();
-    if version() >= 0_20_00_00 {
+    if wallet_node_version() >= 0_20_00_00 {
         assert!(info.label.is_none());
         assert_eq!(info.labels[0], json::GetAddressInfoResultLabel::Simple("other".into()));
     } else {
@@ -657,7 +732,7 @@ fn test_get_block_filter(cl: &Client) {
     let addr =  &cl.get_new_address(None).unwrap()
         .require_network(*NET).unwrap();
     let blocks = cl.generate_to_address(7, &addr).unwrap();
-    if version() >= 190000 {
+    if wallet_node_version() >= 190000 {
         let _ = cl.get_block_filter(&blocks[0]).unwrap();
     } else {
         assert_not_found!(cl.get_block_filter(&blocks[0]));
@@ -1084,7 +1159,7 @@ fn test_create_wallet(cl: &Client) {
         },
     ];
 
-    if version() >= 190000 {
+    if wallet_node_version() >= 190000 {
         wallet_params.push(WalletParams {
             name: wallet_names[3],
             disable_private_keys: None,
@@ -1128,8 +1203,13 @@ fn test_create_wallet(cl: &Client) {
             assert_eq!(result.warning, expected_warning);
         }
 
-        let wallet_client_url = format!("{}{}{}", get_rpc_url(), "/wallet/", wallet_param.name);
-        let wallet_client = Client::new(&wallet_client_url, get_auth()).unwrap();
+        let (wallet_rpc_url, _) = get_rpc_urls();
+        let (wallet_auth, _) = get_auth();
+
+        let wallet_rpc_url = wallet_rpc_url.unwrap_or(DEFAULT_WALLET_NODE_RPC_URL.to_string());
+
+        let wallet_client_url = format!("{}{}{}", wallet_rpc_url, "/wallet/", wallet_param.name);
+        let wallet_client = Client::new(&wallet_client_url, wallet_auth).unwrap();
         let wallet_info = wallet_client.get_wallet_info().unwrap();
 
         assert_eq!(wallet_info.wallet_name, wallet_param.name);
