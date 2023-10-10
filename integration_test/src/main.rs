@@ -257,74 +257,8 @@ fn main() {
     let balance = faucet_client.get_balance(None, None).unwrap();
     trace!(target: "integration_test", "Funded wallet \"{}\". Total balance: {}", TEST_WALLET_NAME.to_string(), balance);
 
-    /* Fixed
-    test_get_mining_info(&wallet_client);
-    test_get_blockchain_info(&wallet_client);
-    test_get_new_address(&wallet_client);
-    test_dump_private_key(&wallet_client);
-    test_get_balance_generate_to_address(&wallet_client);
-    test_get_balances_generate_to_address(&wallet_client);
-    test_get_best_block_hash(&wallet_client);
-    test_get_best_chain_lock(&wallet_client);
-    test_get_block_count(&wallet_client);
-    test_get_block_hash(&wallet_client);
-    // TODO(dashcore): - fails parsing block
-    test_get_block(&wallet_client);
-    test_get_block_header_get_block_header_info(&wallet_client);
-    test_get_block_stats(&wallet_client);
-    test_get_address_info(&wallet_client);
-    test_set_label(&wallet_client);
-    test_send_to_address(&wallet_client);
-    test_get_received_by_address(&wallet_client);
-    test_list_unspent(&wallet_client);
-    test_get_difficulty(&wallet_client);
-    test_get_connection_count(&wallet_client);
-    test_get_raw_transaction(&wallet_client);
-    test_get_raw_mempool(&wallet_client);
-    test_get_transaction(&wallet_client);
-    test_list_transactions(&wallet_client);
-    test_list_since_block(&wallet_client);
-    test_get_tx_out(&wallet_client);
-    // TODO: fix - fails because of a consensus delay when calling `generate_to_address` inside
-    test_get_tx_out_proof(&wallet_client);
-    test_get_mempool_entry(&wallet_client);
-    test_lock_unspent_unlock_unspent(&wallet_client);
-    // TODO: fix
-    // test_get_block_filter(&wallet_client);
-    test_invalidate_block_reconsider_block(&wallet_client);
-    test_key_pool_refill(&wallet_client);
-    test_sign_raw_transaction_with_send_raw_transaction(&wallet_client);
-    test_create_raw_transaction(&wallet_client);
-    test_fund_raw_transaction(&wallet_client);
-    test_test_mempool_accept(&wallet_client);
-    test_wallet_create_funded_psbt(&wallet_client);
-    test_wallet_process_psbt(&wallet_client);
-    test_combine_psbt(&wallet_client);
-    test_finalize_psbt(&wallet_client);
-    test_list_received_by_address(&wallet_client);
-    test_scantxoutset(&wallet_client);
-    test_import_public_key(&wallet_client);
-    test_import_priv_key(&wallet_client);
-    test_import_address(&wallet_client);
-    test_import_address_script(&wallet_client);
-    test_estimate_smart_fee(&wallet_client);
-    test_ping(&wallet_client);
-    test_get_peer_info(&wallet_client);
-    test_rescan_blockchain(&wallet_client);
-    test_create_wallet(&wallet_client);
-    test_get_tx_out_set_info(&wallet_client);
-    test_get_chain_tips(&wallet_client);
-    test_get_net_totals(&wallet_client);
-    test_get_network_hash_ps(&wallet_client);
-    test_uptime(&wallet_client);
-    test_getblocktemplate(&wallet_client);
-    test_add_node(&wallet_client);
-    test_get_added_node_info(&wallet_client);
-    test_get_node_addresses(&wallet_client);
-    test_disconnect_node(&wallet_client);
-    test_add_ban(&wallet_client);
-    test_set_network_active(&wallet_client);
-    */
+    test_wallet_node_endpoints(&wallet_client);
+
 
     return;
 
@@ -404,6 +338,82 @@ fn main() {
     // test_stop(&evo_client);
 }
 
+fn test_wallet_node_endpoints(wallet_client: &Client) {
+    test_get_mining_info(wallet_client);
+    test_get_blockchain_info(wallet_client);
+    test_get_new_address(wallet_client);
+    test_dump_private_key(wallet_client);
+    // TODO: fix - looks like there's a consensus delay when things are running on network of three nodes.
+    // test_get_balance_generate_to_address(wallet_client);
+    test_get_balances_generate_to_address(wallet_client);
+    test_get_best_block_hash(wallet_client);
+    test_get_best_chain_lock(wallet_client);
+    test_get_block_count(wallet_client);
+    test_get_block_hash(wallet_client);
+    // TODO(dashcore): - fails to parse block
+    // test_get_block(wallet_client);
+    test_get_block_header_get_block_header_info(wallet_client);
+    test_get_block_stats(wallet_client);
+    test_get_address_info(wallet_client);
+    test_set_label(wallet_client);
+    test_send_to_address(wallet_client);
+    test_get_received_by_address(wallet_client);
+    test_list_unspent(wallet_client);
+    test_get_difficulty(wallet_client);
+    test_get_connection_count(wallet_client);
+    test_get_raw_transaction(wallet_client);
+    return;
+    test_get_raw_mempool(wallet_client);
+    test_get_transaction(wallet_client);
+    test_list_transactions(wallet_client);
+    test_list_since_block(wallet_client);
+    test_get_tx_out(wallet_client);
+    // TODO: fix - fails because of a consensus delay when calling `generate_to_address` inside
+    // test_get_tx_out_proof(wallet_client);
+    test_get_mempool_entry(wallet_client);
+    test_lock_unspent_unlock_unspent(wallet_client);
+    // TODO: fix
+    // test_get_block_filter(wallet_client);
+    test_invalidate_block_reconsider_block(wallet_client);
+    test_key_pool_refill(wallet_client);
+    test_sign_raw_transaction_with_send_raw_transaction(wallet_client);
+    test_create_raw_transaction(wallet_client);
+    test_fund_raw_transaction(wallet_client);
+    test_test_mempool_accept(wallet_client);
+    test_wallet_create_funded_psbt(wallet_client);
+    test_wallet_process_psbt(wallet_client);
+    test_combine_psbt(wallet_client);
+    test_finalize_psbt(wallet_client);
+    test_list_received_by_address(wallet_client);
+    test_scantxoutset(wallet_client);
+    test_import_public_key(wallet_client);
+    test_import_priv_key(wallet_client);
+    test_import_address(wallet_client);
+    test_import_address_script(wallet_client);
+    test_estimate_smart_fee(wallet_client);
+    test_ping(wallet_client);
+    test_get_peer_info(wallet_client);
+    test_rescan_blockchain(wallet_client);
+    test_create_wallet(wallet_client);
+    test_get_tx_out_set_info(wallet_client);
+    test_get_chain_tips(wallet_client);
+    test_get_net_totals(wallet_client);
+    test_get_network_hash_ps(wallet_client);
+    test_uptime(wallet_client);
+    test_getblocktemplate(wallet_client);
+    test_add_node(wallet_client);
+    test_get_added_node_info(wallet_client);
+    test_get_node_addresses(wallet_client);
+    test_disconnect_node(wallet_client);
+    test_add_ban(wallet_client);
+    test_set_network_active(wallet_client);
+}
+
+fn test_evo_node_endpoints() {
+
+}
+
+
 fn test_get_network_info(cl: &Client) {
     let _ = cl.get_network_info().unwrap();
 }
@@ -447,7 +457,9 @@ fn test_get_balance_generate_to_address(cl: &Client) {
 
     let blocks = cl.generate_to_address(10, &address).unwrap();
     assert_eq!(blocks.len(), 10);
-    assert_ne!(cl.get_balance(None, None).unwrap(), initial);
+
+    let balance_after = cl.get_balance(None, None).unwrap();
+    assert_ne!(balance_after, initial);
 }
 
 fn test_get_balances_generate_to_address(cl: &Client) {
