@@ -258,20 +258,10 @@ fn main() {
     trace!(target: "integration_test", "Funded wallet \"{}\". Total balance: {}", TEST_WALLET_NAME.to_string(), balance);
 
     test_wallet_node_endpoints(&wallet_client);
+    test_evo_node_endpoints(&evo_client);
 
 
     return;
-
-    // test_get_masternode_count(&evo_client);
-    // test_get_masternode_list(&evo_client);
-
-    // TODO: Requested wallet does not exist or is not loaded
-    // test_get_masternode_outputs(&evo_client);
-
-    test_get_masternode_payments(&evo_client);
-    test_get_masternode_status(&evo_client);
-    test_get_masternode_winners(&evo_client);
-    // */
 
     // //TODO import_multi(
     // //TODO verify_message(
@@ -285,57 +275,6 @@ fn main() {
     // //TODO load_wallet(&self, wallet: &str) -> Result<json::LoadWalletResult> {
     // //TODO unload_wallet(&self, wallet: Option<&str>) -> Result<()> {
     // //TODO backup_wallet(&self, destination: Option<&str>) -> Result<()> {
-
-    test_get_quorum_list(&evo_client);
-    test_get_quorum_listextended(&evo_client);
-    test_get_quorum_info(&evo_client);
-    test_get_quorum_dkgstatus(&evo_client);
-    test_get_quorum_sign(&evo_client);
-    // test_get_quorum_getrecsig(&evo_client);
-    return;
-    // TODO: fix - run masternode
-    // test_get_quorum_hasrecsig(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_quorum_isconflicting(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_quorum_memberof(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_quorum_rotationinfo(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_quorum_selectquorum(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_quorum_verify(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_bls_fromsecret(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_bls_generate(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_diff(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_info(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_list(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_register(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_register_fund(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_register_prepare(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_register_submit(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_revoke(&evo_client)
-    // TODO: fix - run masternode
-    // test_get_protx_update_registrar(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_protx_update_service(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_verifychainlock(&evo_client);
-    // TODO: fix - run masternode
-    // test_get_verifyislock(&evo_client);
-
-    // TODO: enable when running container in detached mode
-    // test_stop(&evo_client);
 }
 
 fn test_wallet_node_endpoints(wallet_client: &Client) {
@@ -362,7 +301,7 @@ fn test_wallet_node_endpoints(wallet_client: &Client) {
     test_get_difficulty(wallet_client);
     test_get_connection_count(wallet_client);
     test_get_raw_transaction(wallet_client);
-    return;
+    // return;
     test_get_raw_mempool(wallet_client);
     test_get_transaction(wallet_client);
     test_list_transactions(wallet_client);
@@ -409,8 +348,66 @@ fn test_wallet_node_endpoints(wallet_client: &Client) {
     test_set_network_active(wallet_client);
 }
 
-fn test_evo_node_endpoints() {
+fn test_evo_node_endpoints(evo_client: &Client) {
+    test_get_masternode_count(&evo_client);
+    test_get_masternode_list(&evo_client);
 
+    // TODO: Requested wallet does not exist or is not loaded
+    // test_get_masternode_outputs(&evo_client);
+
+    test_get_masternode_payments(&evo_client);
+    test_get_masternode_status(&evo_client);
+    test_get_masternode_winners(&evo_client);
+    test_get_quorum_list(&evo_client);
+    test_get_quorum_listextended(&evo_client);
+    test_get_quorum_info(&evo_client);
+    test_get_quorum_dkgstatus(&evo_client);
+    test_get_quorum_sign(&evo_client);
+    return;
+    test_get_quorum_getrecsig(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_hasrecsig(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_isconflicting(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_memberof(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_rotationinfo(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_selectquorum(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_quorum_verify(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_bls_fromsecret(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_bls_generate(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_diff(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_info(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_list(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_register(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_register_fund(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_register_prepare(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_register_submit(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_revoke(&evo_client)
+    // TODO: fix - run masternode
+    // test_get_protx_update_registrar(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_protx_update_service(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_verifychainlock(&evo_client);
+    // TODO: fix - run masternode
+    // test_get_verifyislock(&evo_client);
+
+    // TODO: enable when running container in detached mode
+    // test_stop(&evo_client);
 }
 
 
