@@ -519,6 +519,7 @@ pub struct GetMiningInfoResult {
 #[serde(rename_all = "camelCase")]
 pub struct GetRawTransactionResultVinScriptSig {
     pub asm: String,
+    #[serde(with = "hex")]
     pub hex: Vec<u8>,
 }
 
@@ -532,16 +533,16 @@ impl GetRawTransactionResultVinScriptSig {
 #[serde(rename_all = "camelCase")]
 pub struct GetRawTransactionResultVin {
     pub txid: Option<String>,
-    // pub vout: Option<u32>,
-    // pub script_sig: Option<GetRawTransactionResultVinScriptSig>,
+    pub vout: Option<u32>,
+    pub script_sig: Option<GetRawTransactionResultVinScriptSig>,
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub coinbase: Option<Vec<u8>>,
-    // #[serde(with = "dashcore::amount::serde::as_btc::opt")]
-    // pub value: Option<Amount>,
-    // #[serde(rename = "valueSat")]
-    // pub value_sat: Option<u32>,
-    // pub addresses: Vec<String>,
-    // pub sequence: u32,
+    #[serde(with = "dashcore::amount::serde::as_btc::opt")]
+    pub value: Option<Amount>,
+    #[serde(rename = "valueSat")]
+    pub value_sat: Option<u32>,
+    pub addresses: Option<Vec<String>>,
+    pub sequence: u32,
 }
 
 impl GetRawTransactionResultVin {

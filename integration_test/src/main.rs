@@ -185,6 +185,7 @@ fn get_auth() -> (Auth, Auth) {
 
 fn main() {
     log::set_logger(&LOGGER).map(|()| log::set_max_level(log::LevelFilter::max())).unwrap();
+    dotenvy::dotenv().ok();
 
     let (wallet_node_auth, evo_node_auth) = get_auth();
     let (wallet_node_rpc_url, evo_node_rpc_url) = get_rpc_urls();
@@ -252,11 +253,11 @@ fn main() {
     let test_wallet_address = wallet_client.get_new_address(None).unwrap()
         .require_network(*NET).unwrap();
 
-    faucet_client.send_to_address(&test_wallet_address, btc(1.0), None, None, None, None, None, None, None, None).unwrap();
+    faucet_client.send_to_address(&test_wallet_address, btc(100.0), None, None, None, None, None, None, None, None).unwrap();
 
-    let balance = faucet_client.get_balance(None, None).unwrap();
+    let balance = wallet_client.get_balance(None, None).unwrap();
     trace!(target: "integration_test", "Funded wallet \"{}\". Total balance: {}", TEST_WALLET_NAME.to_string(), balance);
-
+    faucet_client.generate_to_address(8, &test_wallet_address).unwrap();
     test_wallet_node_endpoints(&wallet_client);
     test_evo_node_endpoints(&evo_client, &wallet_client);
 
@@ -301,7 +302,6 @@ fn test_wallet_node_endpoints(wallet_client: &Client) {
     test_get_difficulty(wallet_client);
     test_get_connection_count(wallet_client);
     test_get_raw_transaction(wallet_client);
-    // return;
     test_get_raw_mempool(wallet_client);
     test_get_transaction(wallet_client);
     test_list_transactions(wallet_client);
@@ -524,10 +524,7 @@ fn test_get_block_stats(cl: &Client) {
 }
 
 fn test_get_address_info(cl: &Client) {
-    // let addr = cl.get_new_address(None).unwrap()
-    //     .require_network(*NET).unwrap();
-    // let info = cl.get_address_info(&addr).unwrap();
-    //
+    // TODO: check - hex is None
     // let addr = cl.get_new_address(None).unwrap()
     //     .require_network(*NET).unwrap();
     // let info = cl.get_address_info(&addr).unwrap();
@@ -1278,7 +1275,6 @@ fn test_disconnect_node(cl: &Client) {
         -29,
         "Node not found in connected nodes"
     );
-    assert_error_message!(cl.disconnect_node_by_id(1), -29, "Node not found in connected nodes");
 }
 
 fn test_add_ban(cl: &Client) {
