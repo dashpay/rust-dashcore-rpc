@@ -688,33 +688,6 @@ pub struct WalletTxInfo {
     pub wallet_conflicts: Vec<dashcore::Txid>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
-pub struct GetTransactionResult {
-    #[serde(with = "dashcore::amount::serde::as_btc")]
-    pub amount: SignedAmount,
-    #[serde(default, with = "dashcore::amount::serde::as_btc::opt")]
-    pub fee: Option<SignedAmount>,
-    pub confirmations: i32,
-    pub instantlock: bool,
-    pub instantlock_internal: bool,
-    pub chainlock: bool,
-    pub generated: bool,
-    pub blockhash: Option<BlockHash>,
-    pub blockindex: Option<u32>,
-    pub blocktime: Option<u32>,
-    pub txid: Option<dashcore::Txid>,
-
-    pub time: u32,
-    pub timereceived: u32,
-    pub abandoned: Option<bool>,
-    pub comment: Option<String>,
-    pub to: Option<String>,
-    #[serde(rename = "DS")]
-    pub ds: Option<bool>,
-    pub details: Vec<GetTransactionResultDetail>,
-    #[serde(with = "hex")]
-    pub hex: Vec<u8>,
-}
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct GetTransactionLockedResult {
@@ -722,12 +695,6 @@ pub struct GetTransactionLockedResult {
     pub height: Option<u32>,
     #[serde(rename = "chainlock")]
     pub chain_lock: bool,
-}
-
-impl GetTransactionResult {
-    pub fn transaction(&self) -> Result<Transaction, encode::Error> {
-        encode::deserialize(&self.hex)
-    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
@@ -3286,7 +3253,7 @@ mod tests {
     use serde_json::json;
 
     use crate::{
-        deserialize_u32_opt, ExtendedQuorumListResult, MasternodeListDiff, MnSyncStatus, QuorumType,
+        deserialize_u32_opt, MasternodeListDiff, MnSyncStatus,
     };
 
     #[test]
