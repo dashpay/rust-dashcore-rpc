@@ -28,7 +28,8 @@ use dashcore::{
     Address, Amount, Block, OutPoint, PrivateKey, ProTxHash, PublicKey, QuorumHash, Transaction,
 };
 use dashcore_private::hex::display::DisplayHex;
-use dashcore_rpc_json::dashcore::BlockHash;
+use hex::ToHex;
+use dashcore_rpc_json::dashcore::{BlockHash, ChainLock};
 use dashcore_rpc_json::{ProTxInfo, ProTxListType, QuorumType};
 use log::Level::{Debug, Trace, Warn};
 
@@ -1526,6 +1527,16 @@ pub trait RpcApi: Sized {
         let mut args =
             [into_json(block_hash)?, into_json(signature)?, opt_into_json(block_height)?];
         self.call::<bool>("verifychainlock", handle_defaults(&mut args, &[null()]))
+    }
+
+    /// Submits a chain lock if needed
+    fn submit_chainlock(
+        &self,
+        chain_lock: ChainLock,
+    ) -> Result<bool> {
+        let mut args =
+            [into_json(hex::encode(chain_lock.block_hash))?, into_json(hex::encode(chain_lock.signature))?, into_json(chain_lock.block_height)?];
+        self.call::<bool>("submitchainlock", handle_defaults(&mut args, &[null()]))
     }
 
     /// Tests  if a quorum signature is valid for an InstantSend Lock
