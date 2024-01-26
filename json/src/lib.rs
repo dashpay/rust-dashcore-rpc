@@ -712,6 +712,7 @@ pub enum AssetUnlockStatus {
     Chainlocked,
     Mined,
     Mempooled,
+    Unknown,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
