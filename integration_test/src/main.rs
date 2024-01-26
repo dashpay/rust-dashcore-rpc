@@ -406,6 +406,8 @@ fn test_evo_node_endpoints(evo_client: &Client, wallet_client: &Client) {
     // test_get_verifychainlock(evo_client);
     // TODO: fix - needs real hash
     // test_get_verifyislock(evo_client);
+
+    test_get_asset_unlock_statuses(&evo_client);
 }
 
 
@@ -1634,6 +1636,13 @@ fn test_get_protx_update_service(cl: &Client) {
 
 fn test_get_verifychainlock(cl: &Client) {
     let _verifychainlock = cl.get_verifychainlock("00000036d5c520be6e9a32d3829efc983a7b5e88052bf138f80a2b3988689a24", "97ec34efd1615b84af62495e54024880752f57790cf450ae974b80002440963592d96826e24f109e6c149411b70bb9a0035443752368590adae60365cf4251464e0423c1263e9c56a33eae9be9e9c79a117151b2173bcee93497008cace8d793", None).unwrap();
+}
+
+fn test_get_asset_unlock_statuses(cl: &Client) {
+    let indices = vec![0u64, 1, 2];
+    let _statuses = cl.get_asset_unlock_statuses(
+        &indices
+    );
 }
 
 fn test_get_verifyislock(cl: &Client) {
