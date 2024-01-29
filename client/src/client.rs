@@ -487,7 +487,7 @@ pub trait RpcApi: Sized {
     fn get_asset_unlock_statuses(
         &self,
         indices: &Vec<u64>,
-        core_chain_locked_height: u64,
+        core_chain_locked_height: u32,
     ) -> Result<Vec<json::AssetUnlockStatusResult>> {
         let indices_json = indices
             .into_iter()
