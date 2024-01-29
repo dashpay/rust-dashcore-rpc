@@ -31,6 +31,7 @@ use dashcore_private::hex::display::DisplayHex;
 use dashcore_rpc_json::dashcore::BlockHash;
 use dashcore_rpc_json::{ProTxInfo, ProTxListType, QuorumType};
 use log::Level::{Debug, Trace, Warn};
+use crate::dashcore::absolute::Height;
 
 use crate::error::*;
 use crate::json;
@@ -484,16 +485,17 @@ pub trait RpcApi: Sized {
         self.call("gettxchainlocks", &args)
     }
 
+    /// Returns only Chainlocked or Unknown status if height is provided
     fn get_asset_unlock_statuses(
         &self,
         indices: &Vec<u64>,
-        core_chain_locked_height: u32,
+        height: Option<Height>,
     ) -> Result<Vec<json::AssetUnlockStatusResult>> {
         let indices_json = indices
             .into_iter()
             .map(|index| Ok(into_json(index.to_string())?))
             .collect::<Result<Vec<Value>>>()?;
-        let args = [indices_json.into(), core_chain_locked_height.into()];
+        let args = [indices_json.into(),  opt_into_json(height)?];
         self.call("getassetunlockstatuses", &args)
     }
 

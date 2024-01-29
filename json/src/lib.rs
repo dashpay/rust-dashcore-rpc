@@ -707,9 +707,18 @@ pub struct GetTransactionLockedResult {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AssetUnlockStatus {
+    Chainlocked,
+    Mined,
+    Mempooled,
+    Unknown,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct AssetUnlockStatusResult {
     pub index: u64,
-    pub is_mined: bool,
+    pub status: AssetUnlockStatus,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
