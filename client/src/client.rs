@@ -488,7 +488,7 @@ pub trait RpcApi: Sized {
     /// Returns only Chainlocked or Unknown status if height is provided
     fn get_asset_unlock_statuses(
         &self,
-        indices: &Vec<u64>,
+        indices: &[u64],
         height: Option<u32>,
     ) -> Result<Vec<json::AssetUnlockStatusResult>> {
         let indices_json = indices

@@ -1640,8 +1640,10 @@ fn test_get_verifychainlock(cl: &Client) {
 
 fn test_get_asset_unlock_statuses(cl: &Client) {
     let indices = vec![0u64, 1, 2];
+    let height = Some(100);
     let _statuses = cl.get_asset_unlock_statuses(
-        &indices
+        &indices,
+        height,
     );
 }
 
