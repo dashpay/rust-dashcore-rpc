@@ -442,9 +442,8 @@ pub trait RpcApi: Sized {
         transactions_by_block_hash: BTreeMap<&BlockHash, Vec<&dashcore::Txid>>,
     ) -> Result<BTreeMap<dashcore::Txid, Transaction>> {
         let mut args = [into_json(transactions_by_block_hash)?, into_json(false)?];
-        let hex: String = self.call("getrawtransactionmulti", handle_defaults(&mut args, &[null()]))?;
-        let bytes: Vec<u8> = FromHex::from_hex(&hex)?;
-        Ok(dashcore::consensus::encode::deserialize(&bytes)?)
+        let list = self.call::<Vec<(dashcore::Txid, Transaction)>>("getrawtransactionmulti", handle_defaults(&mut args, &[null()]))?;
+        Ok(list.into_iter().collect())
     }
 
     fn get_raw_transaction_hex(
