@@ -8,7 +8,7 @@
 // If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::iter::FromIterator;
 use std::path::PathBuf;
@@ -28,12 +28,14 @@ use dashcore::{
     Address, Amount, Block, OutPoint, PrivateKey, ProTxHash, PublicKey, QuorumHash, Transaction,
 };
 use dashcore_private::hex::display::DisplayHex;
-use dashcore_rpc_json::dashcore::BlockHash;
+use hex::ToHex;
+use dashcore_rpc_json::dashcore::{BlockHash, ChainLock};
 use dashcore_rpc_json::{ProTxInfo, ProTxListType, QuorumType};
 use log::Level::{Debug, Trace, Warn};
-use crate::dashcore::absolute::Height;
+use dashcore_rpc_json::dashcore::bls_sig_utils::BLSSignature;
 
 use crate::error::*;
+use crate::Error::UnexpectedStructure;
 use crate::json;
 use crate::queryable;
 
@@ -390,8 +392,14 @@ pub trait RpcApi: Sized {
     }
 
     /// Returns information about the best chainlock.
-    fn get_best_chain_lock(&self) -> Result<json::GetBestChainLockResult> {
-        self.call("getbestchainlock", &[])
+    fn get_best_chain_lock(&self) -> Result<ChainLock> {
+        let json::GetBestChainLockResult { blockhash, height, signature, known_block: _ } = self.call("getbestchainlock", &[])?;
+
+        Ok(ChainLock {
+            block_height: height,
+            signature: BLSSignature::try_from(signature.as_slice()).map_err(|e| UnexpectedStructure(e.to_string()))?,
+            block_hash: blockhash,
+        })
     }
 
     /// Get block hash at a given height
@@ -413,7 +421,7 @@ pub trait RpcApi: Sized {
 
     fn get_raw_change_address(&self) -> Result<Address<NetworkUnchecked>> {
         let data: String = self.call("getrawchangeaddress", &[])?;
-        let address = Address::from_str(&data).map_err(|_e| Error::UnexpectedStructure)?;
+        let address = Address::from_str(&data).map_err(|_e| Error::UnexpectedStructure("change address given by core was not an address".to_string()))?;
 
         Ok(address)
     }
@@ -425,6 +433,16 @@ pub trait RpcApi: Sized {
     ) -> Result<Transaction> {
         let mut args = [into_json(txid)?, into_json(false)?, opt_into_json(block_hash)?];
         let hex: String = self.call("getrawtransaction", handle_defaults(&mut args, &[null()]))?;
+        let bytes: Vec<u8> = FromHex::from_hex(&hex)?;
+        Ok(dashcore::consensus::encode::deserialize(&bytes)?)
+    }
+
+    fn get_raw_transaction_multi(
+        &self,
+        transactions_by_block_hash: BTreeMap<&BlockHash, Vec<&dashcore::Txid>>,
+    ) -> Result<BTreeMap<dashcore::Txid, Transaction>> {
+        let mut args = [into_json(transactions_by_block_hash)?, into_json(false)?];
+        let hex: String = self.call("getrawtransactionmulti", handle_defaults(&mut args, &[null()]))?;
         let bytes: Vec<u8> = FromHex::from_hex(&hex)?;
         Ok(dashcore::consensus::encode::deserialize(&bytes)?)
     }
@@ -1541,6 +1559,20 @@ pub trait RpcApi: Sized {
         let mut args =
             [into_json(block_hash)?, into_json(signature)?, opt_into_json(block_height)?];
         self.call::<bool>("verifychainlock", handle_defaults(&mut args, &[null()]))
+    }
+
+    /// Submits a chain lock if needed
+    /// This will return an error only if the chain lock signature is invalid
+    /// If the returned height is less than the given chain lock height this means that the chain lock was accepted but we did not yet have the block
+    /// If the returned height is equal to the chain lock height given this means that we are at the height of the chain lock
+    /// If the returned height is higher that the given chain lock this means that we ignored the chain lock because core had something better.
+    fn submit_chain_lock(
+        &self,
+        chain_lock: &ChainLock,
+    ) -> Result<u32> {
+        let mut args =
+            [into_json(hex::encode(chain_lock.block_hash))?, into_json(hex::encode(chain_lock.signature.as_bytes()))?, into_json(chain_lock.block_height)?];
+        self.call::<u32>("submitchainlock", handle_defaults(&mut args, &[null()]))
     }
 
     /// Tests  if a quorum signature is valid for an InstantSend Lock
