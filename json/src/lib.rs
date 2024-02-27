@@ -2057,6 +2057,12 @@ pub struct GetMasternodePaymentsResult {
     pub masternodes: Vec<MasternodePayment>,
 }
 
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
+pub struct PayoutShare {
+    payout_address: [u8; 20],
+    payout_share_reward: u16,
+}
+
 #[serde_as]
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2073,8 +2079,8 @@ pub struct DMNState {
     pub owner_address: [u8; 20],
     #[serde(deserialize_with = "deserialize_address")]
     pub voting_address: [u8; 20],
-    #[serde(deserialize_with = "deserialize_address")]
-    pub payout_address: [u8; 20],
+    #[serde(rename = "payoutAddress", deserialize_with = "deserialize_payout_shares")]
+    pub payout_shares: Vec<PayoutShare>,
     #[serde(with = "hex")]
     pub pub_key_operator: Vec<u8>,
     #[serde(default, deserialize_with = "deserialize_address_optional")]
@@ -2104,7 +2110,7 @@ pub struct DMNStateDiff {
     pub revocation_reason: Option<u32>,
     pub owner_address: Option<[u8; 20]>,
     pub voting_address: Option<[u8; 20]>,
-    pub payout_address: Option<[u8; 20]>,
+    pub payout_shares: Option<Vec<PayoutShare>>,
     pub pub_key_operator: Option<Vec<u8>>,
     pub operator_payout_address: Option<Option<[u8; 20]>>,
     pub platform_node_id: Option<[u8; 20]>,
@@ -2161,6 +2167,15 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
                 })
             })
             .transpose()?;
+
+        let payout_shares: Option<Vec<PayoutShare>> = match payout_address {
+            Some(payout_address) => Some(vec![PayoutShare {
+                payout_address,
+                payout_share_reward: 10000,
+            }]),
+            None => None,
+        };
+
         let operator_payout_address = None; //todo
 
         let platform_node_id = platform_node_id
@@ -2186,7 +2201,7 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             revocation_reason,
             owner_address,
             voting_address,
-            payout_address,
+            payout_shares,
             pub_key_operator,
             operator_payout_address,
             platform_node_id,
@@ -2248,9 +2263,9 @@ impl DMNState {
             } else {
                 None
             },
-            payout_address: if self.payout_address != newer.payout_address {
+            payout_shares: if self.payout_shares != newer.payout_shares {
                 has_diff = true;
-                Some(newer.payout_address)
+                Some(newer.payout_shares.clone())
             } else {
                 None
             },
@@ -2302,7 +2317,7 @@ impl DMNState {
             revocation_reason,
             owner_address,
             voting_address,
-            payout_address,
+            payout_shares,
             pub_key_operator,
             operator_payout_address,
             platform_node_id,
@@ -2330,8 +2345,8 @@ impl DMNState {
         if let Some(voting_address) = voting_address {
             self.voting_address = voting_address;
         }
-        if let Some(payout_address) = payout_address {
-            self.payout_address = payout_address;
+        if let Some(payout_shares) = payout_shares {
+            self.payout_shares = payout_shares;
         }
         if let Some(operator_payout_address) = operator_payout_address {
             self.operator_payout_address = operator_payout_address;
@@ -2886,7 +2901,7 @@ pub struct DMNStateDiffIntermediate {
     #[serde(default, rename = "platformHTTPPort")]
     pub platform_http_port: Option<u32>,
     #[serde(default)]
-    pub payout_address: Option<String>,
+    pub payout_address: Option<String>, // TODO: update once core wallet returns Vector of PayoutShare
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub pub_key_operator: Option<Vec<u8>>,
 }
@@ -3132,6 +3147,29 @@ where
                 let v: Vec<u8> = address.payload_to_vec();
                 match v.clone().try_into() {
                     Ok(array) => Ok(array),
+                    Err(_) => Err(D::Error::custom(ArrayConversionError(v))),
+                }
+            }
+            Err(err) => Err(D::Error::custom(CustomAddressError::from(err))),
+        },
+        Err(e) => Err(e),
+    }
+}
+
+// TODO: change deserialization once core wallet returns Vector of PayoutShares
+fn deserialize_payout_shares<'de, D>(deserializer: D) -> Result<Vec<PayoutShare>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match String::deserialize(deserializer) {
+        Ok(s) => match Address::from_str(s.as_str()) {
+            Ok(address) => {
+                let v: Vec<u8> = address.payload_to_vec();
+                match v.clone().try_into() {
+                    Ok(array) => Ok(vec![PayoutShare {
+                        payout_address: array,
+                        payout_share_reward: 10000,
+                    }]),
                     Err(_) => Err(D::Error::custom(ArrayConversionError(v))),
                 }
             }
