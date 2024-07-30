@@ -576,10 +576,10 @@ impl GetRawTransactionResultVoutScriptPubKey {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetRawTransactionResultVout {
-    #[serde(with = "dashcore::amount::serde::as_btc")]
-    pub value: Amount,
+    #[serde(with = "dashcore::amount::serde::as_btc::opt")]
+    pub value: Option<Amount>,
     #[serde(rename = "valueSat")]
-    pub value_sat: u32,
+    pub value_sat: Option<u32>,
     pub n: u32,
     #[serde(rename = "scriptPubKey")]
     pub script_pub_key: GetRawTransactionResultVoutScriptPubKey,
