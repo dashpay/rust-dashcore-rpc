@@ -1,6 +1,6 @@
 [package]
 name = "dashcore-rpc"
-version = "0.15.5"
+version = "0.15.6"
 authors = [
     "Steven Roose <steven@stevenroose.org>",
     "Jean Pierre Dudey <jeandudey@hotmail.com>",
@@ -29,5 +29,5 @@ jsonrpc = "0.14.0"
 serde = { version = "1.0.132", features = ["derive"] }
 serde_json = { version="1.0", features=["preserve_order"] }
 
-dashcore-private = { git="https://github.com/dashpay/rust-dashcore.git", branch = "master" }
+dashcore-private = { git="https://github.com/dashpay/rust-dashcore.git", tag = "0.31.0" }
 hex = { version="0.4", features=["serde"]}
