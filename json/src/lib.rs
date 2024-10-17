@@ -2130,7 +2130,6 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             platform_p2p_port,
             platform_http_port,
             payout_address,
-            operator_payout_address,
             pub_key_operator,
         } = value;
 
@@ -2164,22 +2163,7 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
                 })
             })
             .transpose()?;
-        let operator_payout_address = operator_payout_address
-            .map(|address| {
-                let address = match Address::from_str(address.as_str()) {
-                    Ok(address) => address,
-                    Err(e) => return Err(e.into()),
-                };
-                address
-                    .payload_to_vec()
-                    .try_into()
-                    .map_err(|_| encode::Error::InvalidVectorSize {
-                        expected: 20,
-                        actual: address.payload_to_vec().len(),
-                    })
-                    .map(Some)
-            })
-            .transpose()?;
+        let operator_payout_address = None;
 
         let platform_node_id = platform_node_id
             .map(|address| {
@@ -2907,8 +2891,6 @@ pub struct DMNStateDiffIntermediate {
     pub platform_http_port: Option<u32>,
     #[serde(default)]
     pub payout_address: Option<String>,
-    #[serde(default)]
-    pub operator_payout_address: Option<String>,
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub pub_key_operator: Option<Vec<u8>>,
 }
