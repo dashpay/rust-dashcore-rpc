@@ -28,11 +28,12 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::net::{SocketAddr};
+use std::net::SocketAddr;
 use std::str::FromStr;
 
 use dashcore::address;
 use dashcore::address::NetworkUnchecked;
+use dashcore::block::Version;
 use dashcore::consensus::encode;
 use dashcore::hashes::hex::Error::InvalidChar;
 use dashcore::hashes::sha256;
@@ -40,7 +41,6 @@ use dashcore::{
     bip158, bip32, Address, Amount, BlockHash, PrivateKey, ProTxHash, PublicKey, QuorumHash,
     Script, ScriptBuf, SignedAmount, Transaction, TxMerkleNode, Txid,
 };
-use dashcore::block::Version;
 use hex::FromHexError;
 use serde::de::Error as SerdeError;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -125,7 +125,7 @@ pub enum UnloadWalletResult {
     Empty(),
     Warning {
         warning: String,
-    }
+    },
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -697,7 +697,6 @@ pub struct WalletTxInfo {
     #[serde(rename = "walletconflicts")]
     pub wallet_conflicts: Vec<dashcore::Txid>,
 }
-
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct GetTransactionLockedResult {
@@ -2106,7 +2105,7 @@ pub struct DMNStateDiff {
     pub voting_address: Option<[u8; 20]>,
     pub payout_address: Option<[u8; 20]>,
     pub pub_key_operator: Option<Vec<u8>>,
-    pub operator_payout_address: Option<[u8; 20]>,
+    pub operator_payout_address: Option<Option<[u8; 20]>>,
     pub platform_node_id: Option<[u8; 20]>,
     pub platform_p2p_port: Option<u32>,
     pub platform_http_port: Option<u32>,
@@ -2155,7 +2154,10 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             .transpose()?;
         let payout_address = payout_address
             .map(|address| {
-                let address = Address::from_str(address.as_str())?;
+                let address = match Address::from_str(address.as_str()) {
+                    Ok(address) => address,
+                    Err(e) => return Err(e.into()),
+                };
                 address.payload_to_vec().try_into().map_err(|_| encode::Error::InvalidVectorSize {
                     expected: 20,
                     actual: address.payload_to_vec().len(),
@@ -2164,11 +2166,18 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             .transpose()?;
         let operator_payout_address = operator_payout_address
             .map(|address| {
-                let address = Address::from_str(address.as_str())?;
-                address.payload_to_vec().try_into().map_err(|_| encode::Error::InvalidVectorSize {
-                    expected: 20,
-                    actual: address.payload_to_vec().len(),
-                })
+                let address = match Address::from_str(address.as_str()) {
+                    Ok(address) => address,
+                    Err(e) => return Err(e.into()),
+                };
+                address
+                    .payload_to_vec()
+                    .try_into()
+                    .map_err(|_| encode::Error::InvalidVectorSize {
+                        expected: 20,
+                        actual: address.payload_to_vec().len(),
+                    })
+                    .map(Some)
             })
             .transpose()?;
 
@@ -2273,7 +2282,7 @@ impl DMNState {
                 != newer.operator_payout_address
             {
                 has_diff = true;
-                newer.operator_payout_address
+                Some(newer.operator_payout_address)
             } else {
                 None
             },
@@ -2342,7 +2351,9 @@ impl DMNState {
         if let Some(payout_address) = payout_address {
             self.payout_address = payout_address;
         }
-        self.operator_payout_address = operator_payout_address;
+        if let Some(operator_payout_address) = operator_payout_address {
+            self.operator_payout_address = operator_payout_address;
+        }
         if let Some(platform_node_id) = platform_node_id {
             self.platform_node_id = Some(platform_node_id);
         }
@@ -2459,7 +2470,9 @@ pub struct BLS {
 
 // --------------------------- Quorum -------------------------------
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash, Encode, Decode, Ord, PartialOrd)]
+#[derive(
+    Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash, Encode, Decode, Ord, PartialOrd,
+)]
 #[repr(u8)]
 pub enum QuorumType {
     Llmq50_60 = 1,
@@ -3079,9 +3092,7 @@ where
             Ok(v) => Ok(Some(v)),
             Err(err) => Err(D::Error::custom(HexError::from(err))),
         },
-        Err(e) => {
-            Err(e)
-        },
+        Err(e) => Err(e),
     }
 }
 
@@ -3263,9 +3274,7 @@ mod tests {
     use dashcore::hashes::Hash;
     use serde_json::json;
 
-    use crate::{
-        deserialize_u32_opt, MasternodeListDiff, MnSyncStatus,
-    };
+    use crate::{deserialize_u32_opt, MasternodeListDiff, MnSyncStatus};
 
     #[test]
     fn test_deserialize_u32_opt() {
