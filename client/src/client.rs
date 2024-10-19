@@ -27,13 +27,12 @@ use dashcore::secp256k1::ecdsa::Signature;
 use dashcore::{
     Address, Amount, Block, OutPoint, PrivateKey, ProTxHash, PublicKey, QuorumHash, Transaction,
 };
-use dashcore_private::hex::display::DisplayHex;
 use dashcore_rpc_json::dashcore::bls_sig_utils::BLSSignature;
 use dashcore_rpc_json::dashcore::{BlockHash, ChainLock};
 use dashcore_rpc_json::{ProTxInfo, ProTxListType, QuorumType};
 use hex::ToHex;
 use log::Level::{Debug, Trace, Warn};
-
+use crate::dashcore::secp256k1::hashes::hex::DisplayHex;
 use crate::error::*;
 use crate::json;
 use crate::queryable;

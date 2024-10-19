@@ -1,6 +1,6 @@
 [package]
 name = "dashcore-rpc"
-version = "0.15.8"
+version = "0.15.9"
 authors = [
     "Steven Roose <steven@stevenroose.org>",
     "Jean Pierre Dudey <jeandudey@hotmail.com>",
