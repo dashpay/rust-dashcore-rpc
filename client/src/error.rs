@@ -87,7 +87,9 @@ impl fmt::Display for Error {
             Error::Io(ref e) => write!(f, "I/O error: {}", e),
             Error::InvalidAmount(ref e) => write!(f, "invalid amount: {}", e),
             Error::InvalidCookieFile => write!(f, "invalid cookie file"),
-            Error::UnexpectedStructure(ref e) => write!(f, "the JSON result had an unexpected structure: {}", e),
+            Error::UnexpectedStructure(ref e) => {
+                write!(f, "the JSON result had an unexpected structure: {}", e)
+            }
         }
     }
 }

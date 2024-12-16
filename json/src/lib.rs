@@ -28,11 +28,12 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::net::{SocketAddr};
+use std::net::SocketAddr;
 use std::str::FromStr;
 
 use dashcore::address;
 use dashcore::address::NetworkUnchecked;
+use dashcore::block::Version;
 use dashcore::consensus::encode;
 use dashcore::hashes::hex::Error::InvalidChar;
 use dashcore::hashes::sha256;
@@ -40,7 +41,6 @@ use dashcore::{
     bip158, bip32, Address, Amount, BlockHash, PrivateKey, ProTxHash, PublicKey, QuorumHash,
     Script, ScriptBuf, SignedAmount, Transaction, TxMerkleNode, Txid,
 };
-use dashcore::block::Version;
 use hex::FromHexError;
 use serde::de::Error as SerdeError;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -125,7 +125,7 @@ pub enum UnloadWalletResult {
     Empty(),
     Warning {
         warning: String,
-    }
+    },
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -537,9 +537,9 @@ pub struct GetRawTransactionResultVin {
     pub script_sig: Option<GetRawTransactionResultVinScriptSig>,
     #[serde(default, deserialize_with = "deserialize_hex_opt")]
     pub coinbase: Option<Vec<u8>>,
-    #[serde(with = "dashcore::amount::serde::as_btc::opt")]
+    #[serde(default, with = "dashcore::amount::serde::as_btc::opt")]
     pub value: Option<Amount>,
-    #[serde(rename = "valueSat")]
+    #[serde(default)]
     pub value_sat: Option<u32>,
     pub addresses: Option<Vec<String>>,
     pub sequence: u32,
@@ -697,7 +697,6 @@ pub struct WalletTxInfo {
     #[serde(rename = "walletconflicts")]
     pub wallet_conflicts: Vec<dashcore::Txid>,
 }
-
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize)]
 pub struct GetTransactionLockedResult {
@@ -2154,14 +2153,17 @@ impl TryFrom<DMNStateDiffIntermediate> for DMNStateDiff {
             .transpose()?;
         let payout_address = payout_address
             .map(|address| {
-                let address = Address::from_str(address.as_str())?;
+                let address = match Address::from_str(address.as_str()) {
+                    Ok(address) => address,
+                    Err(e) => return Err(e.into()),
+                };
                 address.payload_to_vec().try_into().map_err(|_| encode::Error::InvalidVectorSize {
                     expected: 20,
                     actual: address.payload_to_vec().len(),
                 })
             })
             .transpose()?;
-        let operator_payout_address = None; //todo
+        let operator_payout_address = None;
 
         let platform_node_id = platform_node_id
             .map(|address| {
@@ -2452,7 +2454,9 @@ pub struct BLS {
 
 // --------------------------- Quorum -------------------------------
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash, Encode, Decode, Ord, PartialOrd)]
+#[derive(
+    Clone, Copy, PartialEq, Eq, Debug, Serialize_repr, Hash, Encode, Decode, Ord, PartialOrd,
+)]
 #[repr(u8)]
 pub enum QuorumType {
     Llmq50_60 = 1,
@@ -3074,9 +3078,7 @@ where
             Ok(v) => Ok(Some(v)),
             Err(err) => Err(D::Error::custom(HexError::from(err))),
         },
-        Err(e) => {
-            Err(e)
-        },
+        Err(e) => Err(e),
     }
 }
 
@@ -3258,9 +3260,7 @@ mod tests {
     use dashcore::hashes::Hash;
     use serde_json::json;
 
-    use crate::{
-        deserialize_u32_opt, MasternodeListDiff, MnSyncStatus,
-    };
+    use crate::{deserialize_u32_opt, MasternodeListDiff, MnSyncStatus};
 
     #[test]
     fn test_deserialize_u32_opt() {

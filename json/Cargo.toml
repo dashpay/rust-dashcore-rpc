@@ -1,6 +1,6 @@
 [package]
 name = "dashcore-rpc-json"
-version = "0.15.2"
+version = "0.15.13"
 authors = [
     "Steven Roose <steven@stevenroose.org>",
     "Jean Pierre Dudey <jeandudey@hotmail.com>",
@@ -25,6 +25,6 @@ serde_with = "2.1.0"
 serde_repr = "0.1"
 hex = { version="0.4", features=["serde"]}
 
-dashcore = { git="https://github.com/dashpay/rust-dashcore.git", features=["std", "secp-recovery", "rand-std", "signer", "serde"], default-features = false, branch = "master" }
+dashcore = { git="https://github.com/dashpay/rust-dashcore.git", features=["std", "secp-recovery", "rand-std", "signer", "serde"], default-features = false, tag = "0.34.0" }
 
 bincode = { version = "2.0.0-rc.3", features = ["serde"] }

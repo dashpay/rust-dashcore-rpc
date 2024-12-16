@@ -12,25 +12,25 @@
 extern crate lazy_static;
 extern crate log;
 
+use log::{trace, Log};
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
-use log::{Log, trace};
 
-use dashcore_rpc::{json, RawTx};
 use dashcore_rpc::jsonrpc::error::Error as JsonRpcError;
 use dashcore_rpc::{
     dashcore::{
         consensus::encode::{deserialize, serialize},
-        hashes::hex::{FromHex},
+        hashes::hex::FromHex,
         hashes::Hash,
         secp256k1, Address, AddressType, Amount, EcdsaSighashType, Network, OutPoint, PrivateKey,
         Script, SignedAmount, Transaction, TxIn, TxOut, Txid, Witness,
     },
     Auth, Client, Error, RpcApi,
 };
+use dashcore_rpc::{json, RawTx};
 
-use dashcore_rpc::dashcore::{BlockHash, ProTxHash, QuorumHash, ScriptBuf};
 use dashcore_rpc::dashcore::address::NetworkUnchecked;
+use dashcore_rpc::dashcore::{BlockHash, ProTxHash, QuorumHash, ScriptBuf};
 use dashcore_rpc::dashcore_rpc_json::{
     GetBlockTemplateModes, GetBlockTemplateRules, ProTxInfo, ProTxRevokeReason, QuorumType,
     ScanTxOutRequest,
@@ -63,7 +63,9 @@ struct StdLogger;
 
 impl log::Log for StdLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        metadata.target().contains("jsonrpc") || metadata.target().contains("dashcore_rpc") || metadata.target().contains("integration_test")
+        metadata.target().contains("jsonrpc")
+            || metadata.target().contains("dashcore_rpc")
+            || metadata.target().contains("integration_test")
     }
 
     fn log(&self, record: &log::Record) {
@@ -132,14 +134,9 @@ fn sbtc<F: Into<f64>>(btc: F) -> SignedAmount {
 }
 
 fn get_rpc_urls() -> (Option<String>, Option<String>) {
-    let wallet_node_url = std::env::var("WALLET_NODE_RPC_URL")
-        .ok()
-        .filter(|s| !s.is_empty());
+    let wallet_node_url = std::env::var("WALLET_NODE_RPC_URL").ok().filter(|s| !s.is_empty());
 
-    let evo_node_rpc_url = std::env::var("EVO_NODE_RPC_URL")
-        .ok()
-        .filter(|s| !s.is_empty());
-
+    let evo_node_rpc_url = std::env::var("EVO_NODE_RPC_URL").ok().filter(|s| !s.is_empty());
 
     (wallet_node_url, evo_node_rpc_url)
 }
@@ -154,14 +151,10 @@ fn get_auth() -> (Auth, Auth) {
                 .ok()
                 .filter(|s| !s.is_empty())
                 .map(|user| {
-                    Auth::UserPass(
-                        user,
-                        std::env::var("WALLET_NODE_RPC_PASS").unwrap_or_default(),
-                    )
+                    Auth::UserPass(user, std::env::var("WALLET_NODE_RPC_PASS").unwrap_or_default())
                 })
                 .unwrap_or(Auth::None)
         });
-
 
     let evo_node_auth = std::env::var("EVO_NODE_RPC_COOKIE")
         .ok()
@@ -172,10 +165,7 @@ fn get_auth() -> (Auth, Auth) {
                 .ok()
                 .filter(|s| !s.is_empty())
                 .map(|user| {
-                    Auth::UserPass(
-                        user,
-                        std::env::var("EVO_NODE_RPC_PASS").unwrap_or_default()
-                    )
+                    Auth::UserPass(user, std::env::var("EVO_NODE_RPC_PASS").unwrap_or_default())
                 })
                 .unwrap_or(Auth::None)
         });
@@ -190,19 +180,20 @@ fn main() {
     let (wallet_node_auth, evo_node_auth) = get_auth();
     let (wallet_node_rpc_url, evo_node_rpc_url) = get_rpc_urls();
 
-    let wallet_node_rpc_url = wallet_node_rpc_url.unwrap_or(DEFAULT_WALLET_NODE_RPC_URL.to_string());
+    let wallet_node_rpc_url =
+        wallet_node_rpc_url.unwrap_or(DEFAULT_WALLET_NODE_RPC_URL.to_string());
     let evo_node_rpc_url = evo_node_rpc_url.unwrap_or(DEFAULT_EVO_NODE_RPC_URL.to_string());
 
     let wallet_node_auth_type = match &wallet_node_auth {
         Auth::UserPass(_, _) => "UserPass",
         Auth::CookieFile(_) => "CookieFile",
-        Auth::None => "None"
+        Auth::None => "None",
     };
 
     let evo_node_auth_type = match &evo_node_auth {
         Auth::UserPass(_, _) => "UserPass",
         Auth::CookieFile(_) => "CookieFile",
-        Auth::None => "None"
+        Auth::None => "None",
     };
 
     trace!(target: "integration_test", "Wallet node RPC URL: {}", &wallet_node_rpc_url);
@@ -210,7 +201,8 @@ fn main() {
     trace!(target: "integration_test", "Evo node RPC URL: {}", &evo_node_rpc_url);
     trace!(target: "integration_test", "Evo node RPC Auth: {:?}", evo_node_auth_type);
 
-    let faucet_rpc_url = format!("{}/wallet/{}", wallet_node_rpc_url, FAUCET_WALLET_NAME.to_string());
+    let faucet_rpc_url =
+        format!("{}/wallet/{}", wallet_node_rpc_url, FAUCET_WALLET_NAME.to_string());
     let wallet_rpc_url = format!("{}/wallet/{}", wallet_node_rpc_url, TEST_WALLET_NAME.to_string());
     let evo_rpc_url = format!("{}/wallet/{}", evo_node_rpc_url, TEST_WALLET_NAME.to_string());
 
@@ -230,18 +222,16 @@ fn main() {
 
     // Create/Load test wallet to perform operations on RPC
     match wallet_client.load_wallet(&TEST_WALLET_NAME) {
-        Err(e) => {
-            match e {
-                dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -18 => {
-                    wallet_client.create_wallet(&TEST_WALLET_NAME, None, None, None, None).unwrap();
-                    trace!(target: "integration_test", "Wallet \"{}\" created", TEST_WALLET_NAME.to_string());
-                },
-                dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -35 => {
-                    trace!(target: "integration_test", "Wallet \"{}\" already loaded", TEST_WALLET_NAME.to_string());
-                }
-                _ => {
-                    panic!("Error loading wallet: {:?}", e);
-                }
+        Err(e) => match e {
+            dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -18 => {
+                wallet_client.create_wallet(&TEST_WALLET_NAME, None, None, None, None).unwrap();
+                trace!(target: "integration_test", "Wallet \"{}\" created", TEST_WALLET_NAME.to_string());
+            }
+            dashcore_rpc::Error::JsonRpc(JsonRpcError::Rpc(ref e)) if e.code == -35 => {
+                trace!(target: "integration_test", "Wallet \"{}\" already loaded", TEST_WALLET_NAME.to_string());
+            }
+            _ => {
+                panic!("Error loading wallet: {:?}", e);
             }
         },
         Ok(_) => {
@@ -250,17 +240,29 @@ fn main() {
     }
 
     // Fund test wallet
-    let test_wallet_address = wallet_client.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let test_wallet_address =
+        wallet_client.get_new_address(None).unwrap().require_network(*NET).unwrap();
 
-    faucet_client.send_to_address(&test_wallet_address, btc(100.0), None, None, None, None, None, None, None, None).unwrap();
+    faucet_client
+        .send_to_address(
+            &test_wallet_address,
+            btc(100.0),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
 
     let balance = wallet_client.get_balance(None, None).unwrap();
     trace!(target: "integration_test", "Funded wallet \"{}\". Total balance: {}", TEST_WALLET_NAME.to_string(), balance);
     faucet_client.generate_to_address(8, &test_wallet_address).unwrap();
     test_wallet_node_endpoints(&wallet_client);
     test_evo_node_endpoints(&evo_client, &wallet_client);
-
 
     return;
 
@@ -410,7 +412,6 @@ fn test_evo_node_endpoints(evo_client: &Client, wallet_client: &Client) {
     test_get_asset_unlock_statuses(&evo_client);
 }
 
-
 fn test_get_network_info(cl: &Client) {
     let _ = cl.get_network_info().unwrap();
 }
@@ -425,32 +426,23 @@ fn test_get_blockchain_info(cl: &Client) {
 }
 
 fn test_get_new_address(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET)
-        .unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     assert_eq!(addr.address_type(), Some(AddressType::P2pkh));
 
-    let addr = cl.get_new_address(Some("test")).unwrap()
-        .require_network(*NET)
-        .unwrap();
+    let addr = cl.get_new_address(Some("test")).unwrap().require_network(*NET).unwrap();
     assert_eq!(addr.address_type(), Some(AddressType::P2pkh));
 }
 
 fn test_dump_private_key(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let sk = cl.dump_private_key(&addr).unwrap();
-    assert_eq!(
-        addr.to_string(),
-        Address::p2pkh(&sk.public_key(&SECP), *NET).to_string()
-    );
+    assert_eq!(addr.to_string(), Address::p2pkh(&sk.public_key(&SECP), *NET).to_string());
 }
 
 fn test_get_balance_generate_to_address(cl: &Client) {
     let initial = cl.get_balance(None, None).unwrap();
 
-    let address = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let address = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
 
     let blocks = cl.generate_to_address(10, &address).unwrap();
     assert_eq!(blocks.len(), 10);
@@ -463,8 +455,7 @@ fn test_get_balances_generate_to_address(cl: &Client) {
     if wallet_node_version() >= 190000 {
         let initial = cl.get_balances().unwrap();
 
-        let address = cl.get_new_address(None).unwrap()
-            .require_network(*NET).unwrap();
+        let address = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
 
         let blocks = cl.generate_to_address(10, &address).unwrap();
         assert_eq!(blocks.len(), 10);
@@ -532,16 +523,14 @@ fn test_get_address_info(cl: &Client) {
     // let info = cl.get_address_info(&addr).unwrap();
     // assert!(!info.hex.unwrap().is_empty());
 
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let info = cl.get_address_info(&addr).unwrap();
     assert!(info.is_mine);
 }
 
 #[allow(deprecated)]
 fn test_set_label(cl: &Client) {
-    let addr = cl.get_new_address(Some("label")).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(Some("label")).unwrap().require_network(*NET).unwrap();
     let info = cl.get_address_info(&addr).unwrap();
     if wallet_node_version() >= 0_20_00_00 {
         assert!(info.label.is_none());
@@ -575,25 +564,37 @@ fn test_set_label(cl: &Client) {
 }
 
 fn test_send_to_address(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let est = json::EstimateMode::Conservative;
-    let _ = cl.send_to_address(&addr, btc(1), Some("cc"), None, None, None, None, None, None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, Some("tt"), None, None, None, None, None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, None, Some(true), None, None, None, None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, None, None, Some(true), None, None, None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, None, None, None, Some(false), None, None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, None, None, None, None, Some(3), None, None).unwrap();
-    let _ = cl.send_to_address(&addr, btc(1), None, None, None, None, None, None,Some(est), None).unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), Some("cc"), None, None, None, None, None, None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, Some("tt"), None, None, None, None, None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, None, Some(true), None, None, None, None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, None, None, Some(true), None, None, None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, None, None, None, Some(false), None, None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, None, None, None, None, Some(3), None, None)
+        .unwrap();
+    let _ = cl
+        .send_to_address(&addr, btc(1), None, None, None, None, None, None, Some(est), None)
+        .unwrap();
     // TODO: restore when wallet have "avoid reuse" feature enabled
     // let _ = cl.send_to_address(&addr, btc(1), None, None, None, None, None, None,None, Some(true)).unwrap();
 }
 
 fn test_get_received_by_address(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
-    let _ = cl.
-        send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
+    let _ =
+        cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
     assert_eq!(cl.get_received_by_address(&addr, Some(0)).unwrap(), btc(1));
     assert_eq!(cl.get_received_by_address(&addr, Some(1)).unwrap(), btc(0));
 
@@ -608,17 +609,16 @@ fn test_get_received_by_address(cl: &Client) {
 
 fn test_list_unspent(cl: &Client) {
     let addr_unchecked = cl.get_new_address(None).unwrap();
-    let addr = addr_unchecked.clone()
-        .require_network(*NET).unwrap();
-    let txid = cl.
-        send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let addr = addr_unchecked.clone().require_network(*NET).unwrap();
+    let txid =
+        cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
     let unspent = cl.list_unspent(Some(0), None, Some(&[&addr]), None, None).unwrap();
     assert_eq!(unspent[0].txid, txid);
     assert_eq!(unspent[0].address.as_ref(), Some(&addr_unchecked));
     assert_eq!(unspent[0].amount, btc(1));
 
-    let txid = cl.
-        send_to_address(&addr, btc(7), None, None, None, None, None, None, None, None).unwrap();
+    let txid =
+        cl.send_to_address(&addr, btc(7), None, None, None, None, None, None, None, None).unwrap();
     let options = json::ListUnspentQueryOptions {
         minimum_amount: Some(btc(7)),
         maximum_amount: Some(btc(7)),
@@ -639,17 +639,15 @@ fn test_get_connection_count(cl: &Client) {
     let _ = cl.get_connection_count().unwrap();
 }
 
-
 fn test_get_raw_change_address(cl: &Client) {
     let address = cl.get_raw_change_address().unwrap();
     assert!(address.is_valid_for_network(*NET));
 }
 
 fn test_get_raw_transaction(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
-    let txid = cl.
-        send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
+    let txid =
+        cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
     let tx = cl.get_raw_transaction(&txid, None).unwrap();
     let hex = cl.get_raw_transaction_hex(&txid, None).unwrap();
     assert_eq!(tx, deserialize(&hex::decode(&hex).unwrap()).unwrap());
@@ -686,8 +684,9 @@ fn test_list_since_block(cl: &Client) {
 }
 
 fn test_get_tx_out(cl: &Client) {
-    let txid =
-        cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let txid = cl
+        .send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None)
+        .unwrap();
     let out = cl.get_tx_out(&txid, 0, Some(false)).unwrap();
     assert!(out.is_none());
     let out = cl.get_tx_out(&txid, 0, Some(true)).unwrap();
@@ -696,20 +695,22 @@ fn test_get_tx_out(cl: &Client) {
 }
 
 fn test_get_tx_out_proof(cl: &Client) {
-    let txid1 =
-        cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None).unwrap();
-    let txid2 =
-        cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None).unwrap();
-    let addr = &cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let txid1 = cl
+        .send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None)
+        .unwrap();
+    let txid2 = cl
+        .send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None)
+        .unwrap();
+    let addr = &cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let blocks = cl.generate_to_address(7, &addr).unwrap();
     let proof = cl.get_tx_out_proof(&[txid1, txid2], Some(&blocks[0])).unwrap();
     assert!(!proof.is_empty());
 }
 
 fn test_get_mempool_entry(cl: &Client) {
-    let txid =
-        cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let txid = cl
+        .send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None)
+        .unwrap();
     let entry = cl.get_mempool_entry(&txid).unwrap();
     assert!(entry.spent_by.is_empty());
 
@@ -718,9 +719,9 @@ fn test_get_mempool_entry(cl: &Client) {
 }
 
 fn test_lock_unspent_unlock_unspent(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
-    let txid = cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
+    let txid =
+        cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
 
     assert!(cl.lock_unspent(&[OutPoint::new(txid, 0)]).unwrap());
     assert!(cl.unlock_unspent(&[OutPoint::new(txid, 0)]).unwrap());
@@ -730,8 +731,7 @@ fn test_lock_unspent_unlock_unspent(cl: &Client) {
 }
 
 fn test_get_block_filter(cl: &Client) {
-    let addr =  &cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = &cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let blocks = cl.generate_to_address(7, &addr).unwrap();
     if wallet_node_version() >= 190000 {
         let _ = cl.get_block_filter(&blocks[0]).unwrap();
@@ -838,16 +838,14 @@ fn test_create_raw_transaction(cl: &Client) {
     let mut output = HashMap::new();
     output.insert(RANDOM_ADDRESS.to_string(), btc(1));
 
-    let tx =
-        cl.create_raw_transaction(&[input.clone()], &output, Some(500_000)).unwrap();
+    let tx = cl.create_raw_transaction(&[input.clone()], &output, Some(500_000)).unwrap();
     let hex = cl.create_raw_transaction_hex(&[input], &output, Some(500_000)).unwrap();
     assert_eq!(tx, deserialize(&hex::decode(&hex).unwrap()).unwrap());
     assert_eq!(hex, hex::encode(serialize(&tx)));
 }
 
 fn test_fund_raw_transaction(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     let mut output = HashMap::new();
     output.insert(RANDOM_ADDRESS.to_string(), btc(1));
 
@@ -892,8 +890,7 @@ fn test_test_mempool_accept(cl: &Client) {
     let mut output = HashMap::new();
     output.insert(RANDOM_ADDRESS.to_string(), unspent.amount - *FEE);
 
-    let tx =
-        cl.create_raw_transaction(&[input.clone()], &output, Some(500_000)).unwrap();
+    let tx = cl.create_raw_transaction(&[input.clone()], &output, Some(500_000)).unwrap();
     let res = cl.test_mempool_accept(&[&tx]).unwrap();
     assert!(!res[0].allowed);
     // assert!(res[0].reject_reason.is_some());
@@ -1027,9 +1024,9 @@ fn test_finalize_psbt(cl: &Client) {
 }
 
 fn test_list_received_by_address(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
-    let txid = cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
+    let txid =
+        cl.send_to_address(&addr, btc(1), None, None, None, None, None, None, None, None).unwrap();
 
     let _ = cl.list_received_by_address(Some(&addr), None, None, None, None).unwrap();
     let _ = cl.list_received_by_address(Some(&addr), None, Some(true), None, None).unwrap();
@@ -1177,10 +1174,8 @@ fn test_create_wallet(cl: &Client) {
         });
     }
 
-    let existing_wallets = cl.list_wallets().unwrap()
-        .into_iter()
-        .map(|w| w)
-        .collect::<HashSet<String>>();
+    let existing_wallets =
+        cl.list_wallets().unwrap().into_iter().map(|w| w).collect::<HashSet<String>>();
 
     for wallet_param in wallet_params {
         if !existing_wallets.contains(wallet_param.name) {
@@ -1196,9 +1191,9 @@ fn test_create_wallet(cl: &Client) {
 
             assert_eq!(result.name, wallet_param.name);
             let expected_warning = match (wallet_param.passphrase, wallet_param.avoid_reuse) {
-                (None, Some(true)) => {
-                    Some("Empty string given as passphrase, wallet will not be encrypted.".to_string())
-                }
+                (None, Some(true)) => Some(
+                    "Empty string given as passphrase, wallet will not be encrypted.".to_string(),
+                ),
                 _ => Some("".to_string()),
             };
             assert_eq!(result.warning, expected_warning);
@@ -1232,8 +1227,12 @@ fn test_create_wallet(cl: &Client) {
     wallet_list.sort();
 
     // Main wallet created for tests
-    assert!(wallet_list.iter().any(|w| w == &TEST_WALLET_NAME.to_string() || w == &FAUCET_WALLET_NAME.to_string()));
-    wallet_list.retain(|w| w != &TEST_WALLET_NAME.to_string() && w != "" && w != &FAUCET_WALLET_NAME.to_string());
+    assert!(wallet_list
+        .iter()
+        .any(|w| w == &TEST_WALLET_NAME.to_string() || w == &FAUCET_WALLET_NAME.to_string()));
+    wallet_list.retain(|w| {
+        w != &TEST_WALLET_NAME.to_string() && w != "" && w != &FAUCET_WALLET_NAME.to_string()
+    });
 
     // Created wallets
     assert!(wallet_list.iter().zip(wallet_names).all(|(a, b)| a == b));
@@ -1312,12 +1311,10 @@ fn test_uptime(cl: &Client) {
 }
 
 fn test_scantxoutset(cl: &Client) {
-    let addr = cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let addr = cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
 
     cl.generate_to_address(2, &addr).unwrap();
-    let other_addr = &cl.get_new_address(None).unwrap()
-        .require_network(*NET).unwrap();
+    let other_addr = &cl.get_new_address(None).unwrap().require_network(*NET).unwrap();
     cl.generate_to_address(7, other_addr).unwrap();
 
     let utxos = cl
@@ -1333,7 +1330,8 @@ fn test_getblocktemplate(cl: &Client) {
     // contains an entry in the vector of GetBlockTemplateResultTransaction.
     // Otherwise the GetBlockTemplateResultTransaction deserialization wouldn't
     // be tested.
-    cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None).unwrap();
+    cl.send_to_address(&RANDOM_ADDRESS, btc(1), None, None, None, None, None, None, None, None)
+        .unwrap();
 
     cl.get_block_template(GetBlockTemplateModes::Template, &[GetBlockTemplateRules::SegWit], &[])
         .unwrap();
@@ -1569,14 +1567,22 @@ fn test_get_protx_register_fund(cl: &Client) {
 }
 
 fn test_get_protx_register_prepare(cl: &Client) {
-    let owner_address = Address::<NetworkUnchecked>::from_str("yemjhGQ99V5ayJMjoyGGPtxteahii6G1Jz").unwrap()
-        .require_network(*NET).unwrap();
+    let owner_address = Address::<NetworkUnchecked>::from_str("yemjhGQ99V5ayJMjoyGGPtxteahii6G1Jz")
+        .unwrap()
+        .require_network(*NET)
+        .unwrap();
 
-    let voting_address = Address::<NetworkUnchecked>::from_str("yemjhGQ99V5ayJMjoyGGPtxteahii6G1Jz").unwrap()
-        .require_network(*NET).unwrap();
+    let voting_address =
+        Address::<NetworkUnchecked>::from_str("yemjhGQ99V5ayJMjoyGGPtxteahii6G1Jz")
+            .unwrap()
+            .require_network(*NET)
+            .unwrap();
 
-    let payout_address = Address::<NetworkUnchecked>::from_str("yjJJLkYDUN6X8gWjXbCoKEXoiLeKxxMMRt").unwrap()
-        .require_network(*NET).unwrap();
+    let payout_address =
+        Address::<NetworkUnchecked>::from_str("yjJJLkYDUN6X8gWjXbCoKEXoiLeKxxMMRt")
+            .unwrap()
+            .require_network(*NET)
+            .unwrap();
 
     let _protx_register_prepare = cl.get_protx_register_prepare(
         "df41e398bb245e973340d434d386f431dbd69735a575721b0b6833856e7d31ec",
@@ -1610,8 +1616,11 @@ fn test_get_protx_revoke(cl: &Client) {
 }
 
 fn test_get_protx_update_registrar(cl: &Client) {
-    let voting_address = Address::<NetworkUnchecked>::from_str("yX2cDS4kcJ4LK4uq9Hd4TG7kURV3sGLZrw").unwrap()
-        .require_network(*NET).unwrap();
+    let voting_address =
+        Address::<NetworkUnchecked>::from_str("yX2cDS4kcJ4LK4uq9Hd4TG7kURV3sGLZrw")
+            .unwrap()
+            .require_network(*NET)
+            .unwrap();
 
     let _protx_update_registrar = cl.get_protx_update_registrar(
         "ba1b3330e16a0876b7a186e7ceb689f03ec646e611e91d7139de021bbf13afdd",
@@ -1641,10 +1650,7 @@ fn test_get_verifychainlock(cl: &Client) {
 fn test_get_asset_unlock_statuses(cl: &Client) {
     let indices = vec![0u64, 1, 2];
     let height = Some(100);
-    let _statuses = cl.get_asset_unlock_statuses(
-        &indices,
-        height,
-    );
+    let _statuses = cl.get_asset_unlock_statuses(&indices, height);
 }
 
 fn test_get_verifyislock(cl: &Client) {
