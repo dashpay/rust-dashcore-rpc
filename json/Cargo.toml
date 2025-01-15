@@ -1,6 +1,6 @@
 [package]
 name = "dashcore-rpc-json"
-version = "0.15.13"
+version = { workspace = true }
 authors = [
     "Steven Roose <steven@stevenroose.org>",
     "Jean Pierre Dudey <jeandudey@hotmail.com>",

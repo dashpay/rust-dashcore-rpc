@@ -1,6 +1,6 @@
 [package]
 name = "dashcore-rpc"
-version = "0.15.13"
+version = { workspace = true }
 authors = [
     "Steven Roose <steven@stevenroose.org>",
     "Jean Pierre Dudey <jeandudey@hotmail.com>",
@@ -19,15 +19,13 @@ name = "dashcore_rpc"
 path = "src/lib.rs"
 
 [dependencies]
-dashcore-rpc-json = { version = "0.15", path = "../json" }
+dashcore-rpc-json = { version = "0.16", path = "../json" }
 
 log = "0.4.5"
-env_logger = "0.10.0"
 jsonrpc = "0.14.0"
 
 # Used for deserialization of JSON.
 serde = { version = "1.0.132", features = ["derive"] }
 serde_json = { version="1.0", features=["preserve_order"] }
 
-dashcore-private = { git="https://github.com/dashpay/rust-dashcore.git", tag = "0.34.0" }
 hex = { version="0.4", features=["serde"]}
