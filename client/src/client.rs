@@ -446,12 +446,12 @@ pub trait RpcApi: Sized {
         Ok(dashcore::consensus::encode::deserialize(&bytes)?)
     }
 
-    fn get_raw_instant_locks(
+    fn get_instant_locks(
         &self,
         txids: Vec<&dashcore::Txid>,
     ) -> Result<Vec<String>> {
         let mut args = [into_json(txids)?];
-        let instant_locks: Vec<String> = self.call("getrawislocks", handle_defaults(&mut args, &[null()]))?;
+        let instant_locks: Vec<String> = self.call("getislocks", handle_defaults(&mut args, &[null()]))?;
         Ok(instant_locks)
     }
 
