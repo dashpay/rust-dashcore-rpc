@@ -1,3 +1,13 @@
+<div align="center" style="border: 2px solid red; padding: 10px; background-color: #ffe6e6;">
+  <h1 style="color: red;">⚠️ DEPRECATED ⚠️</h1>
+  <p style="font-size: 1.2em;">
+    This repository is <strong>deprecated</strong>. The crates have moved to 
+    <a href="https://github.com/dashpay/rust-dashcore" style="color: red; text-decoration: underline;">https://github.com/dashpay/rust-dashcore</a>.
+    Please update your references accordingly.
+  </p>
+</div>
+
+
 [![Status](https://travis-ci.org/rust-dash/rust-dashcore-rpc.png?branch=master)](https://travis-ci.org/rust-dash/rust-dashcore-rpc)
 
 # Rust RPC client for Dash Core JSON-RPC 
